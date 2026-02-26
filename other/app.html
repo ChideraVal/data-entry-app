@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Multi-file Previewer — PDF.js + Zoom + Multi-file URLs</title>
+    <style>
+        :root {
+            --card-bg: #fff;
+            --card-border: #ddd;
+            --control-bg: #f7f7f7;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 20px;
+            max-width: 1100px;
+            margin: auto;
+            background: #f3f4f6;
+            color: #111;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 20px;
+        }
+
+        .controls {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            visibility: visible;
+        }
+
+        .url-area {
+            width: 480px;
+            min-height: 60px;
+            resize: vertical;
+            padding: 8px;
+        }
+
+        button {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            background: var(--control-bg);
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        #cards {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .meta {
+            font-size: 13px;
+            color: #444;
+        }
+
+        .card-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .preview-area {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            margin-top: 8px;
+            max-height: 650px;
+            overflow: auto;
+        }
+
+        .img-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+        }
+
+        .img-wrap img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            transform-origin: center center;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .small {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .danger {
+            color: #b00020;
+        }
+
+        .download {
+            text-decoration: none;
+            color: #0b5cff;
+            font-size: 13px;
+        }
+    </style>
+
+    <!-- PDF.js UMD -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+    </script>
+</head>
+
+<body>
+    <h1>Multi-file Previewer — PDF, Images, CSV, TXT (Multiple files & URLs)</h1>
+
+    <div class="controls">
+        <label>
+            Select files:
+            <input id="filePicker" type="file" multiple accept=".pdf,image/*,.csv,.txt">
+        </label>
+
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+            <textarea id="urlList" class="url-area"
+                placeholder="Enter one file URL per line (CORS must allow fetch). Example: https://example.com/file.pdf"></textarea>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <button id="previewUrlsBtn">Preview URLs</button>
+                <button id="clearBtn">Clear Previews</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cards"></div>
+
+    <script>
+        (function () {
+            const filePicker = document.getElementById('filePicker');
+            const previewUrlsBtn = document.getElementById('previewUrlsBtn');
+            const urlList = document.getElementById('urlList');
+            const cards = document.getElementById('cards');
+            const clearBtn = document.getElementById('clearBtn');
+
+            const PDF_SCALE_STEP = 1.2; // zoom multiplier
+
+            // Utility: nice file size
+            function niceBytes(n) {
+                if (n == null) return '';
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                let i = 0;
+                while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+                return n.toFixed(n >= 100 ? 0 : 2) + ' ' + units[i];
+            }
+
+            // Clear previews
+            clearBtn.addEventListener('click', () => cards.innerHTML = '');
+
+            // Handle multiple file selection
+            filePicker.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files || []);
+                if (!files.length) return;
+                files.forEach(f => createCardFromFile(f));
+                // allow loading same files again by clearing value
+                e.target.value = '';
+            });
+
+            // Handle multiple URLs (one per line)
+            previewUrlsBtn.addEventListener('click', async () => {
+                const lines = (urlList.value || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                if (!lines.length) return alert('Paste one or more file URLs (one per line). CORS must allow fetch.');
+                for (const url of lines) {
+                    await createCardFromURL(url);
+                }
+            });
+
+            // Create a card header + preview container
+            function makeCard(title) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const head = document.createElement('div');
+                head.className = 'card-head';
+                const left = document.createElement('div');
+                left.innerHTML = `<strong>${escapeHtml(title)}</strong>`;
+                const meta = document.createElement('div');
+                meta.className = 'meta';
+                meta.textContent = ''; // filled later
+                left.appendChild(meta);
+
+                const right = document.createElement('div');
+                right.className = 'card-controls';
+
+                head.appendChild(left);
+                head.appendChild(right);
+                const previewArea = document.createElement('div');
+                previewArea.className = 'preview-area';
+                card.appendChild(head);
+                card.appendChild(previewArea);
+                cards.prepend(card); // newest first
+                return { card, head, left, right, previewArea, meta };
+            }
+
+            // Escape helper
+            function escapeHtml(s) { return (s + '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+
+            // Create card from a File object (local)
+            function createCardFromFile(file) {
+                const { card, right, previewArea, meta } = makeCard(file.name || 'file');
+                meta.textContent = `${file.type || 'unknown'} • ${niceBytes(file.size)}`;
+                // download link
+                const downloadA = document.createElement('a');
+                downloadA.href = URL.createObjectURL(file);
+                downloadA.download = file.name;
+                downloadA.textContent = 'Download';
+                downloadA.className = 'download';
+                right.appendChild(downloadA);
+
+                // choose type
+                const lower = (file.name || '').toLowerCase();
+                if ((file.type || '').startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(lower)) {
+                    renderImageFile(file, previewArea, right);
+                } else if ((file.type || '').includes('pdf') || /\.pdf$/i.test(lower)) {
+                    renderPdfFile(file, previewArea, right);
+                } else if ((file.type || '').startsWith('text/') || /\.txt$/i.test(lower)) {
+                    renderTextFile(file, previewArea, right);
+                } else if ((file.type || '').includes('csv') || /\.csv$/i.test(lower)) {
+                    renderCsvFile(file, previewArea, right);
+                } else {
+                    previewArea.innerHTML = `<div class="small danger">Unsupported file type. You can download it instead.</div>`;
+                }
+            }
+
+            // Create card from URL (fetch remote)
+            async function createCardFromURL(url) {
+                const { card, right, previewArea, meta } = makeCard(url);
+                meta.textContent = `remote URL`;
+                // add download link placeholder (set after fetch)
+                const downloadA = document.createElement('a');
+                downloadA.textContent = 'Download';
+                downloadA.className = 'download';
+                right.appendChild(downloadA);
+
+                previewArea.textContent = 'Fetching… (CORS must allow cross-origin requests)';
+                try {
+                    const resp = await fetch(url, { mode: 'cors' });
+                    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                    const contentType = (resp.headers.get('Content-Type') || '').toLowerCase();
+                    const ab = await resp.arrayBuffer();
+                    const blob = new Blob([ab], { type: (contentType || undefined) });
+                    downloadA.href = URL.createObjectURL(blob);
+                    // choose by content-type or extension
+                    if (contentType.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(url)) {
+                        renderImageBlob(blob, previewArea, right, url);
+                    } else if (contentType.includes('pdf') || /\.pdf$/i.test(url)) {
+                        renderPdfBlob(blob, previewArea, right, url);
+                    } else if (contentType.includes('csv') || /\.csv$/i.test(url)) {
+                        const text = new TextDecoder().decode(ab);
+                        displayCsvText(text, previewArea, right);
+                    } else if (contentType.startsWith('text/') || /\.txt$/i.test(url)) {
+                        const text = new TextDecoder().decode(ab);
+                        displayText(text, previewArea, right);
+                    } else {
+                        previewArea.innerHTML = `<div class="small danger">Unsupported or unknown file type (${escapeHtml(contentType)}). You can download it.</div>`;
+                    }
+                } catch (err) {
+                    previewArea.innerHTML = `<div class="small danger">Failed to fetch URL: ${escapeHtml(err.message)}. CORS or network error.</div>`;
+                    console.warn('fetch failed', err);
+                }
+            }
+
+            // ----------------- Renderers -----------------
+
+            // IMAGE from File
+            function renderImageFile(file, previewArea, right) {
+                const url = URL.createObjectURL(file);
+                renderImageFromUrl(url, previewArea, right, file.name);
+            }
+
+            // IMAGE from Blob
+            function renderImageBlob(blob, previewArea, right, filename) {
+                const url = URL.createObjectURL(blob);
+                renderImageFromUrl(url, previewArea, right, filename);
+            }
+
+            function renderImageFromUrl(url, previewArea, right, filename) {
+                previewArea.innerHTML = '';
+                const wrap = document.createElement('div'); wrap.className = 'img-wrap';
+                const img = document.createElement('img'); img.src = url; img.alt = filename || 'image';
+                wrap.appendChild(img);
+                previewArea.appendChild(wrap);
+
+                // zoom state
+                let scale = 1;
+                const zoomInBtn = makeBtn('Zoom +', () => { scale *= PDF_SCALE_STEP; img.style.transform = `scale(${scale})`; });
+                const zoomOutBtn = makeBtn('Zoom −', () => { scale /= PDF_SCALE_STEP; if (scale < 0.1) scale = 0.1; img.style.transform = `scale(${scale})`; });
+                const fitBtn = makeBtn('Fit', () => { scale = 1; img.style.transform = `scale(${scale})`; img.style.maxWidth = '100%'; });
+
+                right.appendChild(zoomOutBtn); right.appendChild(zoomInBtn); right.appendChild(fitBtn);
+            }
+
+            // PDF from File
+            function renderPdfFile(file, previewArea, right) {
+                file.arrayBuffer().then(ab => renderPdfFromArrayBuffer(ab, previewArea, right, file.name));
+            }
+
+            // PDF from Blob (URL)
+            function renderPdfBlob(blob, previewArea, right, filename) {
+                blob.arrayBuffer().then(ab => renderPdfFromArrayBuffer(ab, previewArea, right, filename));
+            }
+
+            // Core: load PDF document and set up controls
+            async function renderPdfFromArrayBuffer(arrayBuffer, previewArea, right, filename) {
+                previewArea.innerHTML = 'Loading PDF…';
+                try {
+                    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    // state
+                    let currentPage = 1;
+                    let scale = 1.2;
+
+                    // container for canvas
+                    previewArea.innerHTML = '';
+                    const canvas = document.createElement('canvas');
+                    const canvasWrap = document.createElement('div'); canvasWrap.style.textAlign = 'center';
+                    canvasWrap.appendChild(canvas);
+                    previewArea.appendChild(canvasWrap);
+
+                    const info = document.createElement('div'); info.className = 'small'; info.style.marginTop = '6px';
+                    previewArea.appendChild(info);
+
+                    // render function
+                    async function renderPage() {
+                        info.textContent = `Page ${currentPage} / ${pdfDoc.numPages} • Scale ${scale.toFixed(2)}`;
+                        const page = await pdfDoc.getPage(currentPage);
+                        const viewport = page.getViewport({ scale });
+                        const context = canvas.getContext('2d');
+                        canvas.width = Math.ceil(viewport.width);
+                        canvas.height = Math.ceil(viewport.height);
+                        // clear
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        await page.render({ canvasContext: context, viewport }).promise;
+                        // make canvas responsive width
+                        canvas.style.width = Math.min(canvas.width, previewArea.clientWidth - 20) + 'px';
+                        canvas.style.height = 'auto';
+                    }
+
+                    // controls
+                    const btnPrev = makeBtn('◀ Prev', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
+                    const btnNext = makeBtn('Next ▶', () => { if (currentPage < pdfDoc.numPages) { currentPage++; renderPage(); } });
+                    const btnZoomIn = makeBtn('Zoom +', () => { scale *= PDF_SCALE_STEP; renderPage(); });
+                    const btnZoomOut = makeBtn('Zoom −', () => { scale /= PDF_SCALE_STEP; if (scale < 0.2) scale = 0.2; renderPage(); });
+                    const btnFit = makeBtn('Fit Width', () => { /* fit to container width by calculating scale */
+                        // temporary render first at scale 1, then adjust
+                        (async () => {
+                            const page = await pdfDoc.getPage(currentPage);
+                            const vp = page.getViewport({ scale: 1 });
+                            const containerWidth = Math.max(320, previewArea.clientWidth - 20);
+                            const newScale = containerWidth / vp.width;
+                            scale = newScale;
+                            renderPage();
+                        })();
+                    });
+
+                    right.appendChild(btnPrev);
+                    right.appendChild(btnNext);
+                    right.appendChild(btnZoomOut);
+                    right.appendChild(btnZoomIn);
+                    right.appendChild(btnFit);
+
+                    // initial render
+                    await renderPage();
+
+                } catch (err) {
+                    previewArea.innerHTML = `<div class="small danger">Failed to render PDF: ${escapeHtml(err.message)}</div>`;
+                    console.error(err);
+                }
+            }
+
+            // TEXT file
+            function renderTextFile(file, previewArea, right) {
+                const reader = new FileReader();
+                reader.onload = e => displayText(e.target.result, previewArea, right, file.name);
+                reader.onerror = () => previewArea.innerHTML = `<div class="small danger">Failed to read text file.</div>`;
+                reader.readAsText(file);
+            }
+
+            function displayText(text, previewArea, right, filename) {
+                previewArea.innerHTML = '';
+                const pre = document.createElement('pre'); pre.textContent = text; pre.style.fontSize = '13px';
+                previewArea.appendChild(pre);
+                // font size controls
+                let size = 13;
+                const inc = makeBtn('A+', () => { size += 2; pre.style.fontSize = size + 'px'; });
+                const dec = makeBtn('A−', () => { size = Math.max(8, size - 2); pre.style.fontSize = size + 'px'; });
+                right.appendChild(dec); right.appendChild(inc);
+            }
+
+            // CSV file
+            function renderCsvFile(file, previewArea, right) {
+                const reader = new FileReader();
+                reader.onload = e => displayCsvText(e.target.result, previewArea, right, file.name);
+                reader.onerror = () => previewArea.innerHTML = `<div class="small danger">Failed to read CSV.</div>`;
+                reader.readAsText(file);
+            }
+
+            function displayCsvText(csvText, previewArea, right, filename) {
+                previewArea.innerHTML = '';
+                const rows = csvText.split(/\r?\n/).filter(Boolean).map(r => parseCsvRow(r));
+                if (!rows.length) { previewArea.innerHTML = '<div class="small">Empty CSV</div>'; return; }
+                const table = document.createElement('table');
+                const headerRow = rows[0];
+                const thead = document.createElement('thead'); const thr = document.createElement('tr');
+                headerRow.forEach(h => { const th = document.createElement('th'); th.textContent = h; thr.appendChild(th); });
+                thead.appendChild(thr); table.appendChild(thead);
+                const tbody = document.createElement('tbody');
+                for (let i = 1; i < rows.length; i++) {
+                    const tr = document.createElement('tr');
+                    rows[i].forEach(cell => { const td = document.createElement('td'); td.textContent = cell; tr.appendChild(td); });
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+                previewArea.appendChild(table);
+
+                // font size controls for table
+                let size = 13;
+                const inc = makeBtn('A+', () => { size += 1; table.style.fontSize = size + 'px'; });
+                const dec = makeBtn('A−', () => { size = Math.max(8, size - 1); table.style.fontSize = size + 'px'; });
+                right.appendChild(dec); right.appendChild(inc);
+            }
+
+            // simple CSV row parser supporting quoted cells
+            function parseCsvRow(row) {
+                const cells = [];
+                let cur = '', inQuotes = false;
+                for (let i = 0; i < row.length; i++) {
+                    const ch = row[i];
+                    if (ch === '"') {
+                        if (inQuotes && row[i + 1] === '"') { cur += '"'; i++; }
+                        else inQuotes = !inQuotes;
+                    } else if (ch === ',' && !inQuotes) {
+                        cells.push(cur); cur = '';
+                    } else cur += ch;
+                }
+                cells.push(cur);
+                return cells;
+            }
+
+            // Helpers
+            function makeBtn(text, onClick) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.textContent = text;
+                b.addEventListener('click', onClick);
+                return b;
+            }
+
+            // display CSV text (used by URL fetch)
+            function displayCsvText(csvText, previewArea, right) {
+                return displayCsvText(csvText, previewArea, right);
+            }
+
+        })();
+    </script>
+</body>
+
+</html>

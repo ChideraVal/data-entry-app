@@ -1,0 +1,100 @@
+if message_id and InternalEmail.objects.filter(message_id=message_id).exists():
+                    internal_email_exists = True
+                    internal_email = InternalEmail.objects.filter(message_id=message_id).first()
+                    if EnvironmentEmail.objects.filter(environment=environment, internal_email=internal_email).exists():
+                        logger.info(f"Skipped duplicate email: {subject}")
+                        continue# Metadata
+                
+                
+                
+                
+                date_received = msg.get("Date")
+                date_parsed = parsedate_to_datetime(date_received) if date_received else datetime.now()
+                sender = msg.get("From", "")
+
+                # Extract content
+                body_text = ""
+                html_body = ""
+                attachments = []
+                has_attachment = False
+
+                total_file_size = 0
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        content_type = part.get_content_type()
+                        disp = str(part.get("Content-Disposition"))
+
+                        if content_type == "text/plain" and "attachment" not in disp:
+                            payload = part.get_payload(decode=True)
+                            if payload:
+                                body_text += safe_decode(payload)
+
+                        elif content_type == "text/html" and "attachment" not in disp:
+                            payload = part.get_payload(decode=True)
+                            if payload:
+                                html_body += safe_decode(payload)
+
+                        if "attachment" in disp:
+                            has_attachment = True
+                            filename = safe_decode(part.get_filename())
+                            file_data = part.get_payload(decode=True)
+
+                            if filename and file_data:
+                                # CRITICAL: If this fails → skip email
+                                saved, size = save_attachment(filename, file_data)
+                                if saved and size:
+                                    attachments.append({
+                                        "filename": filename,
+                                        "file_path": saved,
+                                        "file_size": size
+                                    })
+                                    print(f'SIZE OF {filename}:', format_bytes(size))
+                                    total_file_size += size
+                                    
+                    print(f'TOTAL_FILE_SIZE FOR {subject}:',format_bytes(total_file_size)) 
+
+                else:
+                    payload = msg.get_payload(decode=True)
+                    if payload:
+                        body_text = safe_decode(payload)
+
+                if REQUIRE_ATTACHMENT and not has_attachment:
+                    logger.info(f"Skipped — attachment required: {subject}")
+                    continue
+
+                if not body_text and html_body:
+                    body_text = html_to_text(html_body)
+
+                max_size, status = False, 'pending'
+                if total_file_size > MAX_OPENAI_FILE_SIZE:
+                    max_size, status = True, 'failed'
+                    
+                    
+                    
+                
+                
+                
+                 # Save email
+                if not internal_email_exists:
+                    new_mail = InternalEmail.objects.create(
+                        subject=subject,
+                        sender=sender,
+                        body=body_text,
+                        date_recieved=date_parsed,
+                        attachments=attachments,
+                        message_id=message_id
+                    )
+                    
+                    new_environment_email = EnvironmentEmail.objects.create(
+                        environment=environment,
+                        internal_email=new_mail,
+                        max_size=max_size,
+                        status=status
+                    )
+                else:
+                    new_environment_email = EnvironmentEmail.objects.create(
+                        environment=environment,
+                        internal_email=internal_email,
+                        max_size=max_size,
+                        status=status
+                    )

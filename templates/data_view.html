@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Data View</title>
+    <link rel="stylesheet" href="{% static 'css/data_view.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>All Extracted Data - {{ environment.name }}</h1>
+                <p class="muted">Manage your IMAP environments and extraction settings.</p>
+            </div>
+        </header>
+        <!-- <h2>Extracted Data — {{ environment.name }}</h2> -->
+        <div class="controls">
+            <div>
+
+                <label class="small">Row source
+                    <select id="rowSourceSelect" class="select"></select>
+                </label>
+
+                <label class="small">Approval
+                    <select id="approvalSelect" class="select">
+                        <option value="all">All</option>
+                        <option value="approved">Approved</option>
+                        <option value="not_approved">Not approved</option>
+                    </select>
+                </label>
+
+                <label class="small">Flatten depth
+                    <input id="depthInput" class="select" type="number" min="1" max="5" value="2" style="width:72px" />
+                </label>
+
+                <label class="small">Page size
+                    <input id="pageSizeInput" class="select" type="number" min="1" max="1000" value="50"
+                    style="width:80px" />
+                </label>
+            </div>
+            
+            <div class="flex gap-8" style="margin-left:auto">
+                <button id="columnsBtn" class="button">Columns</button>
+                <button id="refreshBtn" class="button">Refresh</button>
+                <button id="exportBtn" class="button">Export CSV</button>
+            </div>
+        </div>
+
+        <div class="small muted" id="infoBar">Loading...</div>
+
+        <div class="table-wrap" id="tableWrap">
+            <table id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="bottom">
+            <div class="small muted" id="pagerInfo"></div>
+            <div>
+                <button id="prevBtn" class="button">Previous</button>
+                <button id="nextBtn" class="button">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column modal -->
+    <div id="colModal" class="modal">
+        <div class="panel">
+            <h3>Columns</h3>
+            <div class="col-list" id="colList"></div>
+            <div style="margin-top:12px;text-align:right">
+                <button id="colCancelBtn" class="button" style="border: 1px solid #e6eef9; color: #0f172a; background: transparent; margin-right: .5em;">Cancel</button>
+                <button id="colApplyBtn" class="button">Apply</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        const ENV_ID = '{{ environment.id }}';
+    </script>
+    <script src="{% static 'scripts/data_view.js' %}"></script>
+{% endblock %}
+

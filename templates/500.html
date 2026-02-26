@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Server Error</title>
+    <link rel="stylesheet" href="{% static 'css/handler.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="notfound">
+        <b>500</b>
+        <h1>Server Error</h1>
+        <p>Seems like there's a problem on the server. Contact the website developer for more details.</p>
+    </div>
+{% endblock %}

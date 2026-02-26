@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>JSON Form Editor — Friendly Array Labels & Confirm Delete</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        :root {
+            --bg: #f6f8fb;
+            --card: #fff;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --danger: #d9534f;
+            --ok: #28a745;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+            background: var(--bg);
+            color: #0f172a;
+            padding: 20px;
+        }
+
+        .wrap {
+            max-width: 1100px;
+            margin: 20px auto;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 8px 30px rgba(12, 18, 31, 0.06);
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e6eef8;
+            font-family: monospace;
+            font-size: 13px;
+            resize: vertical;
+            display: none;
+        }
+
+        label.block {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            background: linear-gradient(180deg, #fff, #f2f7ff);
+        }
+
+        button.primary {
+            background: linear-gradient(90deg, var(--accent), #7c3aed);
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.12);
+        }
+
+        .form-area {
+            margin-top: 14px;
+        }
+
+        .object-block,
+        .array-block {
+            background: #fbfdff;
+            border: 1px solid #e6eef8;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
+        .prop-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            margin-top: 10px;
+        }
+
+        .prop-row label {
+            min-width: 160px;
+            font-weight: 600;
+            color: #0b2545;
+            font-size: 13px;
+        }
+
+        .prop-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex: 1;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea.small {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #dfe9f5;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 6px;
+        }
+
+        .array-item {
+            border-left: 3px solid #e8eefc;
+            padding-left: 10px;
+            margin-top: 8px;
+            border-radius: 6px;
+            background: transparent;
+        }
+
+        .array-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .btn-small {
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .btn-remove {
+            background: var(--danger);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-add {
+            background: var(--ok);
+            color: #fff;
+            border: none;
+        }
+
+        details {
+            margin-top: 8px;
+            background: transparent;
+        }
+
+        summary {
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        pre#outputJson {
+            margin-top: 16px;
+            background: #0b1220;
+            color: #dfeffc;
+            padding: 12px;
+            border-radius: 8px;
+            overflow: auto;
+            font-size: 13px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .note {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .badge {
+            background: #eef2ff;
+            color: #0b45a4;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid #dbeafe;
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 12, 20, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal {
+            width: 420px;
+            max-width: calc(100% - 32px);
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 10px 36px rgba(8, 15, 30, 0.45);
+        }
+
+        .modal h3 {
+            margin: 0 0 8px;
+            font-size: 18px;
+        }
+
+        .modal p {
+            margin: 0 0 18px;
+            color: #334155;
+        }
+
+        .modal .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .modal .btn-cancel {
+            background: transparent;
+            border: 1px solid #e6eef8;
+            color: #0b2545;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .modal .btn-confirm {
+            background: linear-gradient(90deg, #ef4444, #b91c1c);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <h1>JSON Form Editor — Friendly Array Labels & Confirm Delete</h1>
+        <div class="grid">
+            <div>
+                <label class="block">Input JSON</label>
+                <textarea id="jsonInput" spellcheck="false">{
+  "users": [
+    {
+      "id": 1,
+      "name": "Alice",
+      "rating": 4.5,
+      "active": true,
+      "roles": ["admin", "editor"],
+      "scores": [10, 12.75, 9.5],
+      "addresses": [
+        {
+          "city": "Lagos",
+          "zip": 100001,
+          "coordinates": { "lat": 6.5244, "lng": 3.3792 },
+          "tags": ["home", "primary"]
+        }
+      ]
+    }
+  ],
+  "metadata": { "version": 1.1, "generatedAt": "2025-01-01" }
+}</textarea>
+
+                <div class="row">
+                    <button class="btn-small" onclick="generateForm()">Generate Form</button>
+                    <button class="btn-small" onclick="downloadJSON()">Download JSON</button>
+                    <button class="btn-small" onclick="loadSample()">Load Sample</button>
+                </div>
+
+                <div class="form-area" id="formArea"></div>
+
+                <div style="margin-top:12px;">
+                    <button class="primary" onclick="submitForm()">Submit Updated JSON</button>
+                </div>
+
+                <h3 style="margin-top:14px">Updated JSON</h3>
+                <pre id="outputJson">{ }</pre>
+            </div>
+
+            <aside>
+                <label class="block">Shape JSON (optional)</label>
+                <textarea id="shapeInput" spellcheck="false">{
+  "users": {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "name": { "type": "string" },
+        "rating": { "type": "number" },
+        "active": { "type": "boolean" },
+        "roles": { "type": "array", "items": { "type": "string" } },
+        "scores": { "type": "array", "items": { "type": "number" } },
+        "addresses": { "type": "array", "items": {
+          "type":"object",
+          "properties": {
+            "city": {"type":"string"},
+            "zip": {"type":"number"},
+            "coordinates": {"type":"object","properties":{"lat":{"type":"number"},"lng":{"type":"number"}}},
+            "tags": {"type":"array","items":{"type":"string"}}
+          }
+        } }
+      }
+    }
+  },
+  "metadata": {"type":"object","properties":{"version":{"type":"number"},"generatedAt":{"type":"string"}}}
+}</textarea>
+
+                <div class="note">Array items are labeled using the array name (singular) and the current index, e.g.
+                    <span class="badge">user 1 of 3 (object)</span>. Add/remove buttons are labeled (e.g. <em>"Add
+                        user"</em>, <em>"Remove user 1"</em>).</div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" role="document" aria-labelledby="confirmTitle">
+            <h3 id="confirmTitle">Confirm delete</h3>
+            <p id="confirmMessage">Are you sure?</p>
+            <div class="modal-actions">
+                <button id="confirmCancel" class="btn-cancel">Cancel</button>
+                <button id="confirmOk" class="btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Utilities and rendering logic adapted — delete confirmation modal added.
+           Use showDeleteConfirm(itemEl, message, onConfirm) to prompt user.
+        */
+
+        function createElem(tag, attrs = {}, children = []) {
+            const el = document.createElement(tag);
+            for (const k in attrs) {
+                if (k === 'class') el.className = attrs[k];
+                else if (k === 'text') el.textContent = attrs[k];
+                else el.setAttribute(k, attrs[k]);
+            }
+            for (const c of children) {
+                if (typeof c === 'string') el.appendChild(document.createTextNode(c));
+                else if (c) el.appendChild(c);
+            }
+            return el;
+        }
+        function detectType(v) {
+            if (Array.isArray(v)) return 'array';
+            if (v === null) return 'null';
+            return typeof v;
+        }
+        function deepClone(v) { return JSON.parse(JSON.stringify(v)); }
+        function singularize(name) {
+            if (!name || typeof name !== 'string') return 'item';
+            if (name.endsWith('ies')) return name.slice(0, -3) + 'y';
+            if (name.endsWith('ses')) return name.slice(0, -2);
+            if (name.endsWith('s') && name.length > 1) return name.slice(0, -1);
+            return name;
+        }
+        function getSampleForPath(shapeRoot, pathParts) {
+            if (!shapeRoot) return undefined;
+            let node = shapeRoot;
+            for (let p of pathParts) {
+                if (node === undefined || node === null) return undefined;
+                if (Array.isArray(node)) node = node[0];
+                if (node && typeof node === 'object') node = node[p];
+                else return undefined;
+            }
+            return node;
+        }
+        function readShape() {
+            const raw = document.getElementById('shapeInput').value.trim();
+            if (!raw) return null;
+            try { return JSON.parse(raw); } catch (e) { console.warn('Invalid shape JSON'); return null; }
+        }
+
+        /* ---------- Confirmation modal logic ---------- */
+        const confirmBackdrop = document.getElementById('confirmBackdrop');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmOk = document.getElementById('confirmOk');
+        const confirmCancel = document.getElementById('confirmCancel');
+
+        let pendingConfirm = null; // {onConfirm: function(), message: string}
+
+        function showDeleteConfirm(message, onConfirm) {
+            pendingConfirm = { onConfirm };
+            confirmMessage.textContent = message;
+            confirmBackdrop.style.display = 'flex';
+            confirmBackdrop.setAttribute('aria-hidden', 'false');
+            // focus confirm button for quick confirm by keyboard
+            confirmOk.focus();
+        }
+
+        function hideDeleteConfirm() {
+            pendingConfirm = null;
+            confirmBackdrop.style.display = 'none';
+            confirmBackdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        confirmOk.addEventListener('click', () => {
+            if (pendingConfirm && typeof pendingConfirm.onConfirm === 'function') {
+                try { pendingConfirm.onConfirm(); } catch (e) { console.error(e); }
+            }
+            hideDeleteConfirm();
+        });
+
+        confirmCancel.addEventListener('click', () => { hideDeleteConfirm(); });
+
+        // close modal on Esc
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && confirmBackdrop.style.display === 'flex') hideDeleteConfirm();
+        });
+
+        /* ---------- Renderers (unchanged logic but remove buttons show modal) ---------- */
+
+        // Primitive renderer
+        function renderPrimitive(value, origType) {
+            const wrapper = createElem('div', { class: 'primitive-wrapper' });
+            if (origType === 'boolean') {
+                const input = createElem('input', { type: 'checkbox' });
+                input.checked = Boolean(value);
+                input.dataset.primType = 'boolean';
+                wrapper.appendChild(input);
+            } else if (origType === 'number') {
+                const input = createElem('input', { type: 'number', step: 'any' });
+                input.value = (value === null || value === undefined) ? '' : String(value);
+                input.dataset.primType = 'number';
+                wrapper.appendChild(input);
+            } else if (origType === 'null') {
+                const sel = createElem('select', {});
+                sel.dataset.primType = 'null';
+                ['null', 'string', 'number', 'boolean'].forEach(opt => {
+                    const o = createElem('option', { value: opt, text: opt });
+                    if (opt === 'null') o.selected = true;
+                    sel.appendChild(o);
+                });
+                const txt = createElem('input', { type: 'text' }); txt.style.display = 'none';
+                sel.addEventListener('change', () => {
+                    const t = sel.value; sel.dataset.primType = t;
+                    if (t === 'null') { txt.style.display = 'none'; txt.value = ''; } else { txt.style.display = 'inline-block'; txt.type = (t === 'number' ? 'number' : 'text'); }
+                });
+                wrapper.appendChild(sel); wrapper.appendChild(txt);
+            } else {
+                const input = createElem('input', { type: 'text' });
+                input.value = (value === null || value === undefined) ? '' : String(value);
+                input.dataset.primType = 'string';
+                wrapper.appendChild(input);
+            }
+
+            wrapper.readValue = function () {
+                const child = wrapper.querySelector('[data-prim-type]');
+                if (!child) return null;
+                const t = child.dataset.primType;
+                if (child.tagName === 'SELECT') {
+                    if (t === 'null') return null;
+                    const adj = wrapper.querySelector('input[type="text"], input[type="number"]');
+                    if (!adj) return null;
+                    if (t === 'number') return adj.value === '' ? null : Number(adj.value);
+                    if (t === 'boolean') return adj.checked;
+                    return adj.value;
+                }
+                if (t === 'boolean') return child.checked;
+                if (t === 'number') return child.value === '' ? null : Number(child.value);
+                return child.value;
+            };
+
+            return wrapper;
+        }
+
+        // Object renderer
+        function renderObject(obj, pathParts = [], shapeRoot = null) {
+            const container = createElem('div', { class: 'object-block' });
+            container.dataset.role = 'object';
+
+            for (const key of Object.keys(obj)) {
+                const val = obj[key];
+                const type = detectType(val);
+                const row = createElem('div', { class: 'prop-row' });
+                const label = createElem('label', { text: key });
+                const ctrl = createElem('div', { class: 'prop-controls' });
+
+                if (type === 'object') {
+                    const details = createElem('details', { open: true }, [
+                        createElem('summary', {}, [key + ' (object)']),
+                        renderObject(val, pathParts.concat([key]), shapeRoot)
+                    ]);
+                    container.appendChild(details);
+                } else if (type === 'array') {
+                    const arrNode = renderArray(val, pathParts.concat([key]), key, shapeRoot);
+                    const details = createElem('details', { open: true }, [
+                        createElem('summary', {}, [key + ' (array)']),
+                        arrNode
+                    ]);
+                    container.appendChild(details);
+                } else {
+                    const prim = renderPrimitive(val, type);
+                    ctrl.appendChild(prim);
+                    row.appendChild(label); row.appendChild(ctrl); container.appendChild(row);
+                }
+            }
+
+            container.readValue = function () {
+                const out = {};
+                for (const child of container.children) {
+                    if (child.tagName === 'DETAILS') {
+                        const summary = child.querySelector('summary').textContent;
+                        const key = summary.split(' (')[0];
+                        const inner = child.querySelector('[data-role="object"], [data-role="array"], .object-block, .array-block');
+                        if (!inner) { out[key] = null; continue; }
+                        if (inner.dataset && inner.dataset.role === 'object') out[key] = inner.readValue();
+                        else if (inner.dataset && inner.dataset.role === 'array') out[key] = inner.readValue();
+                        else {
+                            const prim = inner.querySelector('.primitive-wrapper');
+                            out[key] = prim && prim.readValue ? prim.readValue() : null;
+                        }
+                    } else if (child.classList && child.classList.contains('prop-row')) {
+                        const key = child.querySelector('label').textContent;
+                        const primWrapper = child.querySelector('.primitive-wrapper');
+                        out[key] = primWrapper && primWrapper.readValue ? primWrapper.readValue() : null;
+                    }
+                }
+                return out;
+            };
+
+            return container;
+        }
+
+        // Array renderer with friendly labels and descriptive add/remove text (modal-integrated)
+        function renderArray(arr, pathParts = [], arrayName = 'items', shapeRoot = null) {
+            const container = createElem('div', { class: 'array-block' });
+            container.dataset.role = 'array';
+            container.dataset.arrayName = arrayName;
+
+            const headerRow = createElem('div', { class: 'array-header' });
+            const title = createElem('div', { class: 'muted', text: `${arrayName} — ${arr.length} item${arr.length !== 1 ? 's' : ''}` });
+            const countBadge = createElem('div', { class: 'badge', text: `${arr.length}` });
+            headerRow.appendChild(title); headerRow.appendChild(countBadge);
+            container.appendChild(headerRow);
+
+            const list = createElem('div', { class: 'array-list' });
+
+            let itemSample = undefined;
+            if (arr.length > 0) itemSample = deepClone(arr[0]);
+            else {
+                const sampleCandidate = getSampleForPath(shapeRoot, pathParts);
+                if (Array.isArray(sampleCandidate) && sampleCandidate.length > 0) itemSample = deepClone(sampleCandidate[0]);
+            }
+            const itemType = itemSample === undefined ? null : detectType(itemSample);
+            const singular = singularize(arrayName);
+
+            function updateHeaderAndLabels() {
+                const total = list.children.length;
+                title.textContent = `${arrayName} — ${total} item${total !== 1 ? 's' : ''}`;
+                countBadge.textContent = String(total);
+                Array.from(list.children).forEach((it, idx) => {
+                    const sum = it.querySelector('summary');
+                    if (sum) {
+                        let t = it.dataset.itemType || detectTypeFromNode(it) || 'item';
+                        sum.textContent = `${singular} ${idx + 1} of ${total} (${t})`;
+                    }
+                    const removeBtn = it.querySelector('button.btn-remove');
+                    if (removeBtn) removeBtn.textContent = `Remove ${singular} ${idx + 1}`;
+                });
+                const addBtns = container.querySelectorAll('button.btn-add');
+                addBtns.forEach(b => { if (b.dataset && b.dataset.singular) b.textContent = `Add ${b.dataset.singular}`; });
+            }
+
+            function detectTypeFromNode(itemNode) {
+                const innerObj = itemNode.querySelector('.object-block, [data-role="object"]');
+                if (innerObj) return 'object';
+                const innerArr = itemNode.querySelector('.array-block, [data-role="array"]');
+                if (innerArr) return 'array';
+                const prim = itemNode.querySelector('.primitive-wrapper [data-prim-type]');
+                if (prim) return prim.dataset.primType || 'string';
+                return null;
+            }
+
+            function makeItemNode(value, idx) {
+                const item = createElem('div', { class: 'array-item' });
+                item.dataset.index = idx;
+                item.dataset.itemType = detectType(value);
+
+                const details = createElem('details', { open: true });
+                const summary = createElem('summary', {}, [`${singular} ${idx + 1} of ${Math.max(1, list.children.length)} (${item.dataset.itemType})`]);
+                details.appendChild(summary);
+
+                const body = createElem('div', {});
+                const t = detectType(value);
+                if (t === 'object') {
+                    body.appendChild(renderObject(value, pathParts.concat([String(idx)]), shapeRoot));
+                } else if (t === 'array') {
+                    body.appendChild(renderArray(value, pathParts.concat([String(idx)]), arrayName + '-' + (idx + 1), shapeRoot));
+                } else {
+                    const prim = renderPrimitive(value, t);
+                    body.appendChild(prim);
+                }
+
+                // REMOVE button now triggers modal and only removes after confirmation
+                const removeBtn = createElem('button', { class: 'btn-small btn-remove', type: 'button' }, [`Remove ${singular} ${idx + 1}`]);
+                removeBtn.addEventListener('click', () => {
+                    // const label = `${singular} ${idx + 1}`;
+                    const label = `${singular}`;
+                    // onConfirm callback executes the actual removal and UI update
+                    showDeleteConfirm(`Remove ${label}? This action cannot be undone.`, () => {
+                        item.remove();
+                        Array.from(list.children).forEach((ch, i) => { ch.dataset.index = i; });
+                        updateHeaderAndLabels();
+                        renderControls();
+                    });
+                });
+
+                details.appendChild(body);
+                details.appendChild(removeBtn);
+                item.appendChild(details);
+                return item;
+            }
+
+            arr.forEach((v, i) => list.appendChild(makeItemNode(v, i)));
+            container.appendChild(list);
+
+            let controls = null;
+            function renderControls() {
+                if (controls && controls.parentNode) controls.remove();
+                controls = createElem('div', { class: 'controls-row' });
+
+                if (itemType === 'array') {
+                    const note = createElem('div', { class: 'muted', text: 'Adding items disabled for arrays-of-arrays.' });
+                    controls.appendChild(note);
+                } else if (itemType === 'object') {
+                    const addBtn = createElem('button', { class: 'btn-small btn-add', type: 'button' }, [`Add ${singular}`]);
+                    addBtn.dataset.singular = singular;
+                    addBtn.addEventListener('click', () => {
+                        let template = itemSample ? deepClone(itemSample) : getSampleForPath(shapeRoot, pathParts);
+                        if (!template || detectType(template) !== 'object') template = {};
+                        const idx = list.children.length;
+                        list.appendChild(makeItemNode(template, idx));
+                        updateHeaderAndLabels(); renderControls();
+                    });
+                    controls.appendChild(addBtn);
+                    controls.appendChild(createElem('div', { class: 'muted', text: 'New objects match existing keys.' }));
+                } else if (itemType === 'number' || itemType === 'string' || itemType === 'boolean' || itemType === 'null') {
+                    const addBtn = createElem('button', { class: 'btn-small btn-add', type: 'button' }, [`Add ${singular}`]);
+                    addBtn.dataset.singular = singular;
+                    addBtn.addEventListener('click', () => {
+                        let newVal = itemType === 'number' ? 0 : itemType === 'string' ? '' : itemType === 'boolean' ? false : null;
+                        const idx = list.children.length; list.appendChild(makeItemNode(newVal, idx));
+                        updateHeaderAndLabels(); renderControls();
+                    });
+                    controls.appendChild(addBtn);
+                    controls.appendChild(createElem('div', { class: 'muted', text: 'Array expects: ' + itemType }));
+                } else {
+                    const sel = createElem('select', {});
+                    ['string', 'number', 'boolean', 'object', 'null'].forEach(t => sel.appendChild(createElem('option', { value: t, text: t })));
+                    const addBtn = createElem('button', { class: 'btn-small btn-add', type: 'button' }, [`Add ${singular}`]);
+                    addBtn.dataset.singular = singular;
+                    addBtn.addEventListener('click', () => {
+                        const chosen = sel.value;
+                        let val = chosen === 'string' ? '' : chosen === 'number' ? 0 : chosen === 'boolean' ? false : chosen === 'object' ? {} : null;
+                        const idx = list.children.length;
+                        list.appendChild(makeItemNode(val, idx));
+                        itemSample = val;
+                        renderControls();
+                        updateHeaderAndLabels();
+                    });
+                    controls.appendChild(sel); controls.appendChild(addBtn);
+                    controls.appendChild(createElem('div', { class: 'muted', text: 'Array empty — choose item type (arrays disabled).' }));
+                }
+
+                container.appendChild(controls);
+                updateHeaderAndLabels();
+                return controls;
+            }
+
+            container.readValue = function () {
+                const out = [];
+                for (const it of list.children) {
+                    const innerObj = it.querySelector('.object-block, [data-role="object"]');
+                    const innerArr = it.querySelector('.array-block, [data-role="array"]');
+                    if (innerObj && innerObj.readValue) out.push(innerObj.readValue());
+                    else if (innerArr && innerArr.readValue) out.push(innerArr.readValue());
+                    else {
+                        const prim = it.querySelector('.primitive-wrapper');
+                        out.push(prim && prim.readValue ? prim.readValue() : null);
+                    }
+                }
+                return out;
+            };
+
+            renderControls();
+            updateHeaderAndLabels();
+            return container;
+        }
+
+        // Top-level form generation
+        function generateForm() {
+            const raw = document.getElementById('jsonInput').value;
+            const shapeRoot = readShape();
+            let data;
+            try { data = JSON.parse(raw); } catch (e) { alert('Invalid JSON: ' + e.message); return; }
+            const area = document.getElementById('formArea'); area.innerHTML = '';
+            if (Array.isArray(data)) {
+                const topArr = renderArray(data, [], 'items', shapeRoot);
+                const det = createElem('details', { open: true }, [createElem('summary', {}, ['Root Array'])]);
+                det.appendChild(topArr); area.appendChild(det);
+            } else if (data !== null && typeof data === 'object') {
+                const topObj = renderObject(data, [], shapeRoot);
+                const det = createElem('details', { open: true }, [createElem('summary', {}, ['Root Object'])]);
+                det.appendChild(topObj); area.appendChild(det);
+            } else {
+                const prim = renderPrimitive(data, detectType(data));
+                const wrap = createElem('div', {}); wrap.appendChild(createElem('label', { text: 'Root value' })); wrap.appendChild(prim);
+                prim.id = 'rootPrimitive'; area.appendChild(wrap);
+            }
+            document.getElementById('outputJson').textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Submit and rebuild JSON
+        function submitForm() {
+            const area = document.getElementById('formArea');
+            if (!area.firstChild) { alert('No form generated'); return null; }
+            const top = area.firstChild;
+            const inner = top.querySelector('[data-role="object"], [data-role="array"], .object-block, .array-block, .primitive-wrapper');
+            let rebuilt;
+            if (!inner) {
+                const prim = area.querySelector('.primitive-wrapper');
+                rebuilt = prim && prim.readValue ? prim.readValue() : null;
+            } else {
+                if (inner.dataset && inner.dataset.role === 'object') rebuilt = inner.readValue();
+                else if (inner.dataset && inner.dataset.role === 'array') rebuilt = inner.readValue();
+                else rebuilt = inner.readValue ? inner.readValue() : null;
+            }
+            document.getElementById('outputJson').textContent = JSON.stringify(rebuilt, null, 2);
+            return rebuilt;
+        }
+
+        // helpers
+        function downloadJSON() {
+            const data = submitForm();
+            if (!data) return;
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'edited.json'; document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+        }
+        function loadSample() {
+            document.getElementById('jsonInput').value = JSON.stringify({
+                users: [
+                    {
+                        id: 1, name: "Alice", rating: 4.5, active: true, roles: ["admin", "editor"], scores: [10, 12.75, 9.5],
+                        addresses: [{ city: "Lagos", zip: 100001, coordinates: { lat: 6.5244, lng: 3.3792 }, tags: ["home", "primary"] }]
+                    }
+                ],
+                metadata: { version: 1.1, generatedAt: "2025-01-01" }
+            }, null, 2);
+            document.getElementById('shapeInput').value = JSON.stringify({
+                users: {
+                    type: "array", items: {
+                        type: "object", properties: {
+                            id: { type: "number" }, name: { type: "string" }, rating: { type: "number" }, active: { type: "boolean" },
+                            roles: { type: "array", items: { type: "string" } }, scores: { type: "array", items: { type: "number" } },
+                            addresses: {
+                                type: "array", items: {
+                                    type: "object", properties: {
+                                        city: { type: "string" }, zip: { type: "number" },
+                                        coordinates: { type: "object", properties: { lat: { type: "number" }, lng: { type: "number" } } },
+                                        tags: { type: "array", items: { type: "string" } }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                metadata: { type: "object", properties: { version: { type: "number" }, generatedAt: { type: "string" } } }
+            }, null, 2);
+            generateForm();
+        }
+
+        // expose
+        window.generateForm = generateForm;
+        window.submitForm = submitForm;
+        window.downloadJSON = downloadJSON;
+        window.loadSample = loadSample;
+
+    </script>
+</body>
+
+</html>

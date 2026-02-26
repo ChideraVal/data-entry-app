@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Schema Builder for Pydantic JSON</title>
+<style>
+body { font-family: Arial, sans-serif; margin:18px; }
+.container { display:flex; gap:18px; }
+.pane { width:50%; border:1px solid #ddd; padding:14px; border-radius:8px; box-sizing:border-box; }
+h2,h3 { margin:6px 0 12px; }
+.field, .nested-field { border:1px solid #eee; padding:8px; border-radius:6px; margin-bottom:8px; background:#fafafa; }
+label { display:block; font-size:13px; margin:6px 0 4px; }
+input[type="text"], select { width:100%; padding:6px; box-sizing:border-box; }
+button { margin-top:8px; padding:6px 10px; cursor:pointer; }
+pre { background:#f6f6f6; padding:12px; height:300px; overflow:auto; border-radius:6px; }
+.small-btn { padding:4px 8px; font-size:13px; }
+.row { display:flex; gap:8px; align-items:center; }
+.row > * { flex:1; }
+.row .small { flex:0 0 120px; }
+.controls { display:flex; gap:8px; margin-top:8px; }
+.tree-node { margin-left:16px; }
+.tree-node > .node-header { font-weight:bold; margin:4px 0; }
+.tree-node ul { list-style:none; padding-left:16px; }
+.tree-node li { margin:2px 0; }
+</style>
+</head>
+<body>
+
+<h2>Schema Builder — Typed JSON & Tree Preview</h2>
+<div class="container">
+  <div class="pane">
+    <h3>Schema</h3>
+    <label>Schema name</label>
+    <input id="schemaName" type="text" placeholder="InvoiceData" oninput="renderSchema()" />
+
+    <h3 style="margin-top:14px;">Fields</h3>
+    <div id="fieldsContainer"></div>
+
+    <div class="controls">
+      <button onclick="addField()">+ Add top-level field</button>
+      <button onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div class="pane">
+    <h3>Typed JSON (for Pydantic generation)</h3>
+    <pre id="jsonPreview">{}</pre>
+
+    <h3 class="preview-section">Schema Tree</h3>
+    <div id="treePreview" class="tree-node"></div>
+  </div>
+</div>
+
+<script>
+/* Utility */
+function uid(prefix="id"){ return prefix + "_" + Math.floor(Math.random()*1e9).toString(36); }
+const rootContainer = document.getElementById("fieldsContainer");
+const jsonPreview = document.getElementById("jsonPreview");
+const treePreview = document.getElementById("treePreview");
+
+/* ----------------------------
+ Create field element
+---------------------------- */
+function createFieldElement(isNested=false){
+  const id = uid("f");
+  const wrapper = document.createElement("div");
+  wrapper.id = id;
+  wrapper.className = isNested ? "nested-field" : "field";
+
+  wrapper.innerHTML = `
+    <div class="row">
+      <input class="fname" type="text" placeholder="field_name" oninput="renderSchema()" />
+      <select class="ftype" onchange="onTypeChange('${id}')">
+        <option value="string">string</option>
+        <option value="integer">integer</option>
+        <option value="float">float</option>
+        <option value="boolean">boolean</option>
+        <option value="object">object</option>
+        <option value="array">array</option>
+      </select>
+      <label class="small"><input class="freq" type="checkbox" onchange="renderSchema()" /> required</label>
+      <button class="small-btn" onclick="removeElement('${id}')">Remove</button>
+    </div>
+
+    <div class="object-config" style="display:none; margin-top:8px;">
+      <div class="object-fields"></div>
+      <div style="margin-top:6px;">
+        <button class="small-btn" onclick="addNestedField('${id}'); return false;">+ Add nested field (object)</button>
+      </div>
+    </div>
+
+    <div class="array-config" style="display:none; margin-top:8px;">
+      <label>Array item type</label>
+      <select class="arrayItemType" onchange="onArrayItemTypeChange('${id}')">
+        <option value="string">string</option>
+        <option value="integer">integer</option>
+        <option value="float">float</option>
+        <option value="boolean">boolean</option>
+        <option value="object">object</option>
+      </select>
+
+      <div class="array-object-config" style="display:none; margin-top:8px;">
+        <div class="array-object-fields"></div>
+        <div style="margin-top:6px;">
+          <button class="small-btn" onclick="addNestedArrayField('${id}'); return false;">+ Add nested field (array item object)</button>
+        </div>
+      </div>
+    </div>
+  `;
+  return wrapper;
+}
+
+/* Add / Remove fields */
+function addField(){ rootContainer.appendChild(createFieldElement(false)); renderSchema(); }
+function removeElement(id){ const el=document.getElementById(id); if(el) el.remove(); renderSchema(); }
+function addNestedField(parentId){ const parent=document.getElementById(parentId); parent.querySelector(".object-fields").appendChild(createFieldElement(true)); renderSchema(); }
+function addNestedArrayField(parentId){ const parent=document.getElementById(parentId); parent.querySelector(".array-object-fields").appendChild(createFieldElement(true)); renderSchema(); }
+
+/* Type change handlers */
+function onTypeChange(id){
+  const el=document.getElementById(id);
+  const type = el.querySelector(".ftype").value;
+  el.querySelector(".object-config").style.display = (type==="object") ? "block" : "none";
+  el.querySelector(".array-config").style.display = (type==="array") ? "block" : "none";
+  if(type==="array") onArrayItemTypeChange(id);
+  renderSchema();
+}
+function onArrayItemTypeChange(id){
+  const el=document.getElementById(id);
+  const t = el.querySelector(".arrayItemType").value;
+  el.querySelector(".array-object-config").style.display = (t==="object") ? "block" : "none";
+  renderSchema();
+}
+
+/* ----------------------------
+ Build type-mapped JSON recursively
+---------------------------- */
+function buildTypedJSONFromElement(fieldEl){
+  const name = (fieldEl.querySelector(".fname")?.value || "").trim();
+  if(!name) return null;
+  const type = fieldEl.querySelector(".ftype").value;
+
+  let value;
+  if(type==="object"){
+    const props = {};
+    fieldEl.querySelectorAll(":scope > .object-config > .object-fields > .nested-field").forEach(nf=>{
+      const child = buildTypedJSONFromElement(nf);
+      if(child) props[child.name] = child.value;
+    });
+    value = { type: "object", properties: props };
+  } else if(type==="array"){
+    const itemType = fieldEl.querySelector(".arrayItemType").value;
+    if(itemType==="object"){
+      const arrProps = {};
+      fieldEl.querySelectorAll(":scope > .array-config > .array-object-config > .array-object-fields > .nested-field").forEach(nf=>{
+        const child = buildTypedJSONFromElement(nf);
+        if(child) arrProps[child.name] = child.value;
+      });
+      value = { type:"array", items: { type: "object", properties: arrProps } };
+    } else {
+      value = { type:"array", items: itemType==="float"?"float":itemType };
+    }
+  } else {
+    value = (type==="float") ? "float" : type;
+  }
+
+  return { name, value };
+}
+
+/* ----------------------------
+ Build tree view recursively
+---------------------------- */
+function buildTreeView(def, name){
+  if(!def) return null;
+  const li = document.createElement("li");
+  if(typeof def === "object" && !Array.isArray(def)){
+    if(def.type==="array"){
+      li.innerHTML = `<span>${name} : array</span>`;
+      const ul = document.createElement("ul");
+      if(typeof def.items==="object" && def.items.type==="object"){
+        for(const key in def.items.properties){
+          const child = buildTreeView(def.items.properties[key], key);
+          if(child) ul.appendChild(child);
+        }
+      } else {
+        const child = document.createElement("li");
+        child.textContent = `items: ${def.items}`;
+        ul.appendChild(child);
+      }
+      li.appendChild(ul);
+    } else if(def.type==="object"){
+      li.innerHTML = `<span>${name} : object</span>`;
+      const ul = document.createElement("ul");
+      for(const key in def.properties){
+        const child = buildTreeView(def.properties[key], key);
+        if(child) ul.appendChild(child);
+      }
+      li.appendChild(ul);
+    }
+  } else {
+    li.textContent = `${name} : ${def}`;
+  }
+  return li;
+}
+
+/* ----------------------------
+ Render JSON & tree
+---------------------------- */
+function renderSchema(){
+  const typedJSON={};
+  rootContainer.querySelectorAll(":scope > .field").forEach(f=>{
+    const node = buildTypedJSONFromElement(f);
+    if(node) typedJSON[node.name] = node.value;
+  });
+  jsonPreview.textContent = JSON.stringify(typedJSON, null, 4);
+
+  // tree view
+  treePreview.innerHTML="";
+  const ul = document.createElement("ul");
+  for(const key in typedJSON){
+    const node = buildTreeView(typedJSON[key], key);
+    if(node) ul.appendChild(node);
+  }
+  treePreview.appendChild(ul);
+}
+
+/* Clear all */
+function clearAll(){ rootContainer.innerHTML=""; document.getElementById("schemaName").value=""; renderSchema(); }
+
+/* Initialize */
+renderSchema();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Permission Denied</title>
+    <link rel="stylesheet" href="{% static 'css/handler.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="notfound">
+        <b>403</b>
+        <h1>Permission Denied</h1>
+        <p>You are not authorized to perform the intended action or request. Contact the super admin for support.</p>
+        <p>{{ request.headers.referer }}</p>
+    </div>
+{% endblock %}

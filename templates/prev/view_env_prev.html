@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Email Monitor Dashboard — Django API</title>
+
+    <!-- Google font (optional, lightweight) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f6f8fb;
+            --card: #ffffff;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --accent-2: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --glass: rgba(255, 255, 255, 0.6);
+            --shadow-sm: 0 6px 18px rgba(16, 24, 40, 0.06);
+            --shadow-md: 0 10px 30px rgba(16, 24, 40, 0.08);
+            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(180deg, #fbfdff 0%, var(--bg) 100%);
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: 28px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 6px;
+        }
+
+        .brand {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .logo {
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            gap: 10px;
+            align-items: center;
+            border: 0;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: transform .12s ease, box-shadow .12s ease;
+            background: var(--card);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px)
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent), #3b82f6);
+            color: white;
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.18);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+        }
+
+        .btn[disabled] {
+            opacity: .55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type=file] {
+            display: none
+        }
+
+        /* Metrics row */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .metric {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .metric .icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .m-title {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .m-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 6px
+        }
+
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: #eef2ff;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress>i {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #7c3aed, #60a5fa);
+            width: 0%;
+            transition: width .6s cubic-bezier(.2, .9, .3, 1);
+        }
+
+        /* Main content */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            margin-top: 6px;
+        }
+
+        /* Queue card */
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card h2 {
+            margin: 0 0 12px 0;
+            font-size: 16px
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .filter-btn.active {
+            background: #f3f6ff;
+            border-color: #e6edff;
+            color: var(--accent);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.06);
+        }
+
+        .search {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search input {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #e6edf7;
+            outline: none;
+            width: 240px;
+            font-size: 14px;
+        }
+
+        /* Queue list */
+        .list {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 120px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 40px 1fr 190px 120px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 10px;
+            transition: background .12s ease, transform .08s ease;
+        }
+
+        /* .row:hover {
+            transform: translateY(-3px);
+            background: #fbfdff
+        } */
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            color: white;
+            font-weight: 700;
+            box-shadow: var(--shadow-sm)
+        }
+
+        .col-subject {
+            display: flex;
+            flex-direction: column
+        }
+
+        .subject {
+            font-weight: 700
+        }
+
+        .meta {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .col-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            align-items: center
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 0;
+            background: #f6f7fb;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: transform .1s ease;
+        }
+
+        .icon-btn:hover {
+            transform: translateY(-3px)
+        }
+
+        .tag {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 13px
+        }
+
+        .tag.failed {
+            background: #fff1f0;
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.06)
+        }
+
+        .tag.pending {
+            background: #fff7ed;
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.06)
+        }
+
+        .tag.success {
+            background: #ecfdf5;
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.06)
+        }
+
+        /* Sidebar */
+        .sidebar .small {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #fbfdff;
+            border: 1px solid #f0f6ff;
+            margin-bottom: 10px;
+        }
+
+        /* skeleton loaders */
+        .skeleton {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(90deg, #f3f4f6, #eef2ff, #f3f4f6);
+            border-radius: 8px;
+        }
+
+        .skeleton::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
+            transform: translateX(-100%);
+            animation: shimmer 1.2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .skeleton-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 190px 120px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 10px;
+            background: transparent;
+        }
+
+        .skeleton-ava {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px
+        }
+
+        .skeleton-line {
+            height: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px
+        }
+
+        .skeleton-small {
+            height: 10px;
+            border-radius: 6px;
+            width: 80px
+        }
+
+        /* toast */
+        .toast {
+            position: fixed;
+            right: 28px;
+            bottom: 28px;
+            background: linear-gradient(90deg, #111827, #0f172a);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(2, 6, 23, 0.5);
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease, transform .3s cubic-bezier(.2, .9, .3, 1);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto
+        }
+
+        /* responsive */
+        @media (max-width: 980px) {
+            .main {
+                grid-template-columns: 1fr
+            }
+
+            .metrics {
+                grid-template-columns: 1fr
+            }
+
+            .search input {
+                width: 160px
+            }
+
+            .row {
+                grid-template-columns: 40px 1fr 140px 100px;
+            }
+
+            .skeleton-row {
+                grid-template-columns: 40px 1fr 140px 100px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" role="main">
+        <header>
+            <div class="brand">
+                <div class="logo">EM</div>
+                <div>
+                    <h1>Email Monitor</h1>
+                    <div class="subtitle">Monitoring & extraction • Dashboard</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <label class="btn" title="Upload files">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 3v12" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="#0f172a" stroke-width="1.6"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M7 11l5-6 5 6" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <span style="opacity:.95">Upload Files</span>
+                    <input id="fileUpload" type="file" multiple />
+                </label>
+
+                <button id="scanBtn" class="btn btn-primary" title="Scan inbox & process with AI">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M3 12h4" stroke="white" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M7 12a5 5 0 0 1 10 0" stroke="white" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M21 12h-2" stroke="white" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Scan Email Inbox
+                </button>
+            </div>
+        </header>
+
+        <!-- Metrics -->
+        <section class="metrics" aria-label="Key metrics">
+            <div class="metric card">
+                <div class="icon" style="background:linear-gradient(135deg,#7c3aed,#60a5fa)">D</div>
+                <div style="flex:1">
+                    <div class="m-title">Documents processed this month</div>
+                    <div class="m-value" id="docsValue">—</div>
+                    <div class="progress" aria-hidden><i id="docsProgress" style="width:0%"></i></div>
+                </div>
+            </div>
+
+            <div class="metric card">
+                <div class="icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">E</div>
+                <div style="flex:1">
+                    <div class="m-title">Emails fetched & processed</div>
+                    <div class="m-value" id="emailsValue">—</div>
+                    <div class="progress" aria-hidden><i id="emailsProgress" style="width:0%"></i></div>
+                </div>
+            </div>
+
+            <div class="metric card">
+                <div class="icon" style="background:linear-gradient(135deg,#16a34a,#34d399)">O</div>
+                <div style="flex:1">
+                    <div class="m-title">Data approved (parsed data)</div>
+                    <div class="m-value" id="ordersValue">—</div>
+                    <div class="progress" aria-hidden><i id="ordersProgress" style="width:0%"></i></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main -->
+        <section class="main">
+            <!-- Queue / List -->
+            <div class="card">
+                <!-- Title line above toolbar -->
+                <h2>Queue — Recent fetched emails</h2>
+                <div class="subtitle" style="margin-top:6px; margin-bottom:12px;">Shows the most recent emails fetched
+                    and their extraction status.</div>
+
+                <div class="toolbar">
+                    <div></div> <!-- spacer -->
+
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <div class="filters" role="tablist" aria-label="Status filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="failed">Failed</button>
+                            <button class="filter-btn" data-filter="pending">Pending</button>
+                            <button class="filter-btn" data-filter="successful">Successful</button>
+                        </div>
+
+                        <div class="search">
+                            <input id="search" placeholder="Search subject, from, date..." aria-label="Search emails" />
+                            <button id="refreshBtn" class="btn btn-ghost" title="Refresh (UI)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                    <path d="M20 7v6h-6" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <path d="M4 17a8 8 0 1 0 4-7.1" stroke="#0f172a" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="list" id="queueList" aria-live="polite">
+                    <!-- rows inserted by JS -->
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="sidebar card">
+                <h3 style="margin-top:0">Summary</h3>
+                <div class="small">Quick stats and helpful tips</div>
+
+                <div class="stat">
+                    <div>Pending</div>
+                    <div id="countPending">0</div>
+                </div>
+                <div class="stat">
+                    <div>Failed</div>
+                    <div id="countFailed">0</div>
+                </div>
+                <div class="stat">
+                    <div>Successful</div>
+                    <div id="countSuccess">0</div>
+                </div>
+
+                <div style="margin-top:18px">
+                    <h4 style="margin:0 0 8px 0">Notes</h4>
+                    <div class="small">• Files larger than your configured limit will be skipped. <br>• Use "Scan Email
+                        Inbox" to fetch & process automatically</div>
+                </div>
+
+                <div style="margin-top:18px">
+                    <button id="bulkReprocessBtn" class="btn" style="width:100%">Reprocess all failed</button>
+                </div>
+            </aside>
+        </section>
+
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script>
+        /******************************
+         * DASHBOARD JS - connects to Django endpoints
+         ******************************/
+
+        // Local state
+        let env_id = Number("{{ env_id }}");
+        let localEmails = []; // list of email objects from backend
+        let metrics = {
+            docs: { value: 0, limit: 500 },
+            emails: { value: 0, limit: 100 },
+            orders: { value: 0, limit: 100 }
+        };
+
+        // UI refs
+        const queueEl = document.getElementById('queueList');
+        const filters = Array.from(document.querySelectorAll('.filter-btn'));
+        const searchInput = document.getElementById('search');
+        const toast = document.getElementById('toast');
+        const countPending = document.getElementById('countPending');
+        const countFailed = document.getElementById('countFailed');
+        const countSuccess = document.getElementById('countSuccess');
+        const docsProgress = document.getElementById('docsProgress');
+        const emailsProgress = document.getElementById('emailsProgress');
+        const ordersProgress = document.getElementById('ordersProgress');
+        const docsValue = document.getElementById('docsValue');
+        const emailsValue = document.getElementById('emailsValue');
+        const ordersValue = document.getElementById('ordersValue');
+        const bulkReprocessBtn = document.getElementById('bulkReprocessBtn');
+        const scanBtn = document.getElementById('scanBtn');
+        const fileUpload = document.getElementById('fileUpload');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        // bulk reprocess btn set to disable initially
+        bulkReprocessBtn.setAttribute('disabled', 'disabled');
+
+        // Helper: show toast
+        let toastTimer = null;
+        function showToast(msg) {
+            clearTimeout(toastTimer);
+            toast.textContent = msg;
+            toast.classList.add('show');
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Helper: HTML escape
+        function escapeHtml(s) {
+            return String(s || '').replace(/[&<>"']/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]; });
+        }
+
+        // CSRF helper (Django default cookie name)
+        function getCookie(name) {
+            const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return v ? v.pop() : '';
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        // Render metrics to UI
+        function renderMetrics(localMetrics) {
+            if (localMetrics) metrics = localMetrics;
+            const dPct = Math.round((metrics.docs.value / Math.max(1, metrics.docs.limit)) * 100);
+            const ePct = Math.round((metrics.emails.value / Math.max(1, metrics.emails.limit)) * 100);
+            const oPct = Math.round((metrics.orders.value / Math.max(1, metrics.orders.limit)) * 100);
+            docsProgress.style.width = dPct + '%';
+            emailsProgress.style.width = ePct + '%';
+            ordersProgress.style.width = oPct + '%';
+            docsValue.textContent = `${metrics.docs.value} / ${metrics.docs.limit}`;
+            emailsValue.textContent = `${metrics.emails.value} / ${metrics.emails.limit}`;
+            ordersValue.textContent = `${metrics.orders.value} / ${metrics.orders.limit}`;
+        }
+
+        // Skeleton helpers (same as before)
+        function createSkeletonRowNode() {
+            const s = document.createElement('div');
+            s.className = 'skeleton-row';
+            s.innerHTML = `
+        <div class="skeleton skeleton-ava"></div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="skeleton skeleton-line" style="width:70%"></div>
+          <div class="skeleton skeleton-line" style="width:45%"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <div class="skeleton skeleton-small"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <div class="skeleton skeleton-small" style="width:60px"></div>
+        </div>
+      `;
+            return s;
+        }
+        function renderFullListSkeleton(rows = 4) {
+            queueEl.innerHTML = '';
+            for (let i = 0; i < rows; i++) {
+                queueEl.appendChild(createSkeletonRowNode());
+            }
+        }
+
+        // Create a real row node from email object
+        function createRowNode(email) {
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.dataset.id = email.id;
+
+            const colorBy = {
+                successful: 'linear-gradient(135deg,#10b981,#34d399)',
+                failed: 'linear-gradient(135deg,#ef4444,#fb7185)',
+                pending: 'linear-gradient(135deg,#f59e0b,#f97316)'
+            };
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.style.background = colorBy[email.status] || '#94a3b8';
+            avatar.textContent = (email.from || 'u')[0].toUpperCase();
+
+            const subj = document.createElement('div');
+            subj.className = 'col-subject';
+            subj.innerHTML = `<div class="subject">${escapeHtml(email.subject)}</div>
+                        <div class="meta">${escapeHtml(email.from)} • ${escapeHtml(email.date)} • ${email.id || '-'} KB</div>`;
+
+            const statusWrap = document.createElement('div');
+            statusWrap.style.display = 'flex';
+            statusWrap.style.justifyContent = 'flex-end';
+            statusWrap.style.gap = '8px';
+            const tag = document.createElement('div');
+            tag.className = 'tag ' + (email.status === 'failed' ? 'failed' : email.status === 'pending' ? 'pending' : 'success');
+            tag.textContent = email.status === 'failed' ? 'Failed' : email.status === 'pending' ? 'Pending' : 'Successful';
+
+            // For max size
+            // const tag2 = document.createElement('div');
+            // tag2.className = 'tag ' + (email.status === 'failed' ? 'failed' : email.status === 'pending' ? 'pending' : 'success');
+            // tag2.textContent = email.status === 'failed' ? 'Failed' : email.status === 'pending' ? 'Pending' : 'Successful';
+            // End
+            statusWrap.appendChild(tag);
+
+            const actions = document.createElement('div');
+            actions.className = 'col-actions';
+
+            
+            const btnReproc = document.createElement('button');
+            btnReproc.className = 'icon-btn btn';
+            btnReproc.title = 'Reprocess with AI';
+            btnReproc.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M21 12a9 9 0 1 0-3.44 6.72" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21 12v-5" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21 7l-4 4" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+            btnReproc.addEventListener('click', () => handleReprocessClick(email.id, row, btnReproc));
+            if (email.status !== 'failed') {
+                btnReproc.setAttribute('disabled', 'disabled');
+            }
+
+
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'icon-btn';
+            btnDelete.title = 'Delete email';
+            btnDelete.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M3 6h18" stroke="#111827" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#111827" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 11v6" stroke="#111827" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 11v6" stroke="#111827" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+            btnDelete.addEventListener('click', () => handleDeleteClick(email.id, row, btnDelete));
+
+            actions.appendChild(btnReproc);
+            actions.appendChild(btnDelete);
+
+            row.appendChild(avatar);
+            row.appendChild(subj);
+            row.appendChild(statusWrap);
+            row.appendChild(actions);
+
+            return row;
+        }
+
+        // Render list using localEmails (filter + search)
+        function renderList(filter = 'all', q = '') {
+            queueEl.innerHTML = '';
+            const filtered = localEmails.filter(e => {
+                if (filter !== 'all' && e.status !== filter) return false;
+                if (!q) return true;
+                const norm = q.toLowerCase();
+                return (e.subject + ' ' + e.from + ' ' + e.date).toLowerCase().includes(norm);
+            });
+            if (filtered.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.padding = '28px';
+                empty.style.textAlign = 'center';
+                empty.style.color = 'var(--muted)';
+                empty.textContent = 'No emails match this filter/search.';
+                queueEl.appendChild(empty);
+                updateCounts();
+                return;
+            }
+            filtered.forEach(e => queueEl.appendChild(createRowNode(e)));
+            updateCounts();
+        }
+
+        // Update counts & toggle bulk button
+        function updateCounts() {
+            const pending = localEmails.filter(s => s.status === 'pending').length;
+            const failed = localEmails.filter(s => s.status === 'failed').length;
+            const success = localEmails.filter(s => s.status === 'successful').length;
+            countPending.textContent = pending;
+            countFailed.textContent = failed;
+            countSuccess.textContent = success;
+
+            if (failed === 0) {
+                bulkReprocessBtn.setAttribute('disabled', 'disabled');
+            } else {
+                bulkReprocessBtn.removeAttribute('disabled');
+            }
+        }
+
+        /******************************
+         * NETWORK ACTIONS (fetch to Django)
+         ******************************/
+
+        // Load initial emails from /api/emails/
+        async function loadEmails() {
+            renderFullListSkeleton(4);
+            try {
+                const res = await fetch(`/api/emails/${env_id}/`);
+                if (!res.ok) throw new Error('Failed to fetch emails');
+                const json = await res.json();
+                // Expecting { emails: [...] }
+                localEmails = Array.isArray(json.emails) ? json.emails : [];
+                if (json.metrics) renderMetrics(json.metrics);
+                renderList(activeFilter, searchInput.value.trim());
+            } catch (e) {
+                showToast('Failed loading emails');
+                queueEl.innerHTML = '<div style="padding:20px;color:var(--muted)">Failed to load emails.</div>';
+            }
+        }
+
+        // Scan inbox -> POST /api/scan-inbox/ (returns emails, metrics, summary)
+        scanBtn.addEventListener('click', async () => {
+            scanBtn.setAttribute('disabled', 'disabled');
+            renderFullListSkeleton(4);
+            try {
+                const res = await fetch(`/api/scan-inbox/${env_id}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrftoken }
+                });
+                if (!res.ok) throw new Error('Scan failed');
+                const json = await res.json();
+                // expected shape: { emails: [...], metrics: {...}, summary: {...} }
+                if (Array.isArray(json.emails) && json.emails.length) {
+                    // Prepend new emails into localEmails (assuming server sent the new items)
+                    // Avoid duplicates by id
+                    const ids = new Set(localEmails.map(e => e.id));
+                    json.emails.forEach(e => { if (!ids.has(e.id)) localEmails.unshift(e); });
+                }
+                if (json.metrics) renderMetrics(json.metrics);
+                renderList(activeFilter, searchInput.value.trim());
+                showToast((json.emails?.length || 0) + ' new email(s) scanned and processed');
+            } catch (e) {
+                console.log(e)
+                showToast('Scan failed');
+                renderList(activeFilter, searchInput.value.trim());
+            } finally {
+                scanBtn.removeAttribute('disabled');
+            }
+        });
+
+        // Reprocess single email -> POST /api/emails/:id/reprocess/
+        async function handleReprocessClick(id, rowNode, btnEl) {
+            try {
+                btnEl.setAttribute('disabled', 'disabled');
+                // replace row with skeleton
+                const placeholder = document.createElement('div');
+                placeholder.style.minHeight = rowNode.offsetHeight + 'px';
+                rowNode.parentNode.replaceChild(placeholder, rowNode);
+                const skeleton = createSkeletonRowNode();
+                placeholder.appendChild(skeleton);
+
+                const res = await fetch(`/api/emails/${id}/reprocess/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+                });
+                if (!res.ok) throw new Error('Reprocess failed');
+                const json = await res.json();
+                // expecting { processed: bool, email: {...}, metrics: {...}, summary: {...} }
+                if (json.email) {
+                    // update localEmails with returned email
+                    const idx = localEmails.findIndex(x => x.id === json.email.id);
+                    if (idx !== -1) localEmails[idx] = json.email;
+                    else localEmails.unshift(json.email); // if not present add it
+                }
+                if (json.metrics) renderMetrics(json.metrics);
+                // replace placeholder with updated row
+                renderList(activeFilter, searchInput.value.trim());
+                showToast(json.processed ? 'Reprocess successful' : 'Reprocess failed');
+            } catch (e) {
+                showToast('Reprocess failed');
+                // restore row if possible
+                renderList(activeFilter, searchInput.value.trim());
+            }
+        }
+
+        // Delete single email -> DELETE /api/emails/:id/delete/
+        async function handleDeleteClick(id, rowNode, btnEl) {
+            if (!confirm('Delete this email from queue?')) return;
+            btnEl.setAttribute('disabled', 'disabled');
+            // show skeleton placeholder
+            const placeholder = document.createElement('div');
+            placeholder.style.minHeight = rowNode.offsetHeight + 'px';
+            rowNode.parentNode.replaceChild(placeholder, rowNode);
+            const skeleton = createSkeletonRowNode();
+            placeholder.appendChild(skeleton);
+
+            try {
+                const res = await fetch(`/api/emails/${id}/delete/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrftoken }
+                });
+                if (!res.ok) {
+                    // try fallback POST (some servers may expect POST)
+                    const fallback = await fetch(`/api/emails/${id}/delete/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+                    });
+                    if (!fallback.ok) throw new Error('Delete failed');
+                    const fbJson = await fallback.json();
+                    if (fbJson.deleted) {
+                        localEmails = localEmails.filter(x => x.id !== id);
+                        renderList(activeFilter, searchInput.value.trim());
+                        renderMetrics(fbJson.metrics);
+                        showToast('Email deleted');
+                        return;
+                    } else {
+                        throw new Error('Delete failed');
+                    }
+                }
+                const json = await res.json();
+                if (json.deleted) {
+                    // remove locally
+                    localEmails = localEmails.filter(x => x.id !== id);
+                    renderList(activeFilter, searchInput.value.trim());
+                    renderMetrics(json.metrics);
+                    showToast('Email deleted');
+                } else {
+                    showToast('Delete failed');
+                    renderList(activeFilter, searchInput.value.trim());
+                }
+            } catch (e) {
+                showToast('Delete failed');
+                renderList(activeFilter, searchInput.value.trim());
+            }
+        }
+
+        // Reprocess all failed -> POST /api/reprocess-failed/
+        bulkReprocessBtn.addEventListener('click', async () => {
+            const failedItems = localEmails.filter(s => s.status === 'failed');
+            if (failedItems.length === 0) { showToast('No failed items to reprocess'); return; }
+            if (!confirm(`Reprocess ${failedItems.length} failed email(s)?`)) return;
+
+            // replace failed rows with skeletons
+            failedItems.forEach(item => {
+                const row = queueEl.querySelector(`.row[data-id="${item.id}"]`);
+                if (row) {
+                    const placeholder = document.createElement('div');
+                    placeholder.style.minHeight = row.offsetHeight + 'px';
+                    row.parentNode.replaceChild(placeholder, row);
+                    const skeleton = createSkeletonRowNode();
+                    placeholder.appendChild(skeleton);
+                }
+            });
+
+            bulkReprocessBtn.setAttribute('disabled', 'disabled');
+            try {
+                const res = await fetch(`/api/reprocess-failed/${env_id}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+                });
+                if (!res.ok) throw new Error('Bulk reprocess failed');
+                const json = await res.json();
+                // expected: { results: [{ processed, email }, ...], metrics, summary }
+                console.log(json.results)
+                if (Array.isArray(json.results)) {
+                    processed_count = json.results.filter(result => result.email.status === "successful").length;
+                    console.log(json.results.filter(result => result.email.status === "successful"))
+                    console.log(processed_count)
+                    // update localEmails by replacing those email objects
+                    json.results.forEach(r => {
+                        const idx = localEmails.findIndex(x => x.id === r.email.id);
+                        if (idx !== -1) localEmails[idx] = r.email;
+                        else localEmails.unshift(r.email);
+                    });
+                }
+                if (json.metrics) renderMetrics(json.metrics);
+                renderList(activeFilter, searchInput.value.trim());
+                showToast(`Bulk reprocess finished for ${processed_count} email{}`);
+            } catch (e) {
+                showToast('Bulk reprocess failed');
+                renderList(activeFilter, searchInput.value.trim());
+            } finally {
+                bulkReprocessBtn.removeAttribute('disabled');
+            }
+        });
+
+        // Upload files (local behaviour: POST to an endpoint if you have one; here we simply add pending)
+        fileUpload.addEventListener('change', async (ev) => {
+            const files = Array.from(ev.target.files);
+            if (files.length === 0) return;
+            // Option: if you have an endpoint to upload, call it here. For now we just add to UI as pending and show toast.
+            files.forEach((f, i) => {
+                const id = Math.max(0, ...localEmails.map(s => s.id)) + i + 1;
+                localEmails.unshift({
+                    id,
+                    subject: `[Uploaded] ${f.name}`,
+                    from: "manual.upload",
+                    date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+                    status: 'pending',
+                    sizeKb: Math.round(f.size / 1024)
+                });
+            });
+            renderList(activeFilter, searchInput.value.trim());
+            showToast(files.length + ' file(s) uploaded (mock)');
+            ev.target.value = '';
+        });
+
+        // Refresh button: re-render UI (or optionally re-fetch)
+        refreshBtn.addEventListener('click', () => {
+            // Optionally re-fetch from server: loadEmails();
+            // loadEmails()
+            // renderList(activeFilter, searchInput.value.trim());
+            bulkReprocessBtn.setAttribute('disabled', 'disabled');
+            showToast('Refreshing...');
+            loadEmails().then(() => {
+                showToast('Refreshed');
+            })
+        });
+
+        // Filters
+        let activeFilter = 'all';
+        filters.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filters.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeFilter = btn.dataset.filter;
+                renderList(activeFilter, searchInput.value.trim());
+            });
+        });
+
+        // Search
+        searchInput.addEventListener('input', () => {
+            renderList(activeFilter, searchInput.value.trim());
+        });
+
+        // Init: load initial emails, then optionally request metrics via scan endpoint to populate metrics
+        (async function init() {
+            await loadEmails();
+            // Optionally, request a lightweight metrics update by calling scan with n=0 (if your scan endpoint supports it)
+            // Here we'll call scan with GET and ?n=0 if you want server metrics without adding new emails.
+            // try {
+            //     const res = await fetch('/api/scan-inbox/?n=0', { method: 'GET' });
+            //     if (res.ok) {
+            //         const json = await res.json();
+            //         if (json.metrics) renderMetrics(json.metrics);
+            //         if (json.summary) {
+            //             // optionally sync counts from server summary (but keep localEmails authoritative)
+            //             document.getElementById('countPending').textContent = json.summary.pending ?? document.getElementById('countPending').textContent;
+            //             document.getElementById('countFailed').textContent = json.summary.failed ?? document.getElementById('countFailed').textContent;
+            //             document.getElementById('countSuccess').textContent = json.summary.success ?? document.getElementById('countSuccess').textContent;
+            //         }
+            //     } else {
+            //         // ignore silently
+            //     }
+            // } catch (e) {
+            //     // ignore
+            // }
+        })();
+    </script>
+</body>
+
+</html>

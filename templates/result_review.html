@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% load static %}
+<title>Review Result</title>
+<link rel="stylesheet" href="{% static 'css/result_review.css' %}">
+<!-- PDF.js UMD (used by File Previewer) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+</script>
+{% endblock %}
+
+{% block body %}
+<!-- <header class="app-header">
+    <div class="brand">
+        <div class="logo">FH</div>
+        <div>
+            <div class="title">FileHelper — Preview + JSON Editor</div>
+            <div class="subtitle">Left: preview files — Right: schema-driven JSON editor</div>
+        </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;">
+        <div class="muted" style="font-size:13px;">Demo mode</div>
+        <button class="secondary" onclick="alert('Demo action')">Demo</button>
+    </div>
+</header> -->
+<div class="container">
+    <header class="header">
+        <div>
+            <h1>
+                {% if result.environment_email %}
+                {{ result.environment_email.internal_email.subject }}
+                {% else %}
+                {{ result.environment_upload.name }}
+                {% endif %}
+            </h1>
+            <p class="muted">AI extraction results</p>
+        </div>
+    </header>
+    <div class="split">
+        <!-- LEFT PANEL: File Previewer -->
+        <section class="panel left">
+            <div class="inner">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div class="controls">
+                        <!-- <label style="font-weight:600; color:#0b2545;">Select files
+                            <input id="filePicker" type="file" multiple accept=".pdf,image/*,.csv,.txt" />
+                        </label> -->
+
+                        <div style="display:flex;flex-direction:column;">
+                            {% if result.environment_email %}
+                            <label style="font-weight:600; color:#0b2545;">Email Body</label>
+                                <p class="content">{{ result.environment_email.internal_email.body|linebreaksbr|urlize }}</p>
+                            {% endif %}
+                            <!-- <label style="font-weight:600; color:#0b2545;">Preview URLs</label> -->
+                            <label style="font-weight:600; color:#0b2545;">
+                                Files
+                                {% if result.environment_email %}
+                                ({{ result.environment_email.internal_email.attachments|length }})
+                                {% else %}
+                                ({{ result.environment_upload.attachments|length }})
+                                {% endif %}
+                            </label>
+
+                            <div style="display:flex; gap:8px;">
+                                <textarea id="urlList" class="url-area"
+                                    placeholder="Enter file URLs. Separate by newline, comma, or semicolon (CORS must allow fetch).">{{ file_urls }}</textarea>
+                                <div style="display:flex;flex-direction:column;gap:8px;">
+                                    <!-- <button id="previewUrlsBtn">Preview URLs</button> -->
+                                    <!-- <button id="clearBtn" class="secondary">Clear Previews</button> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+                        <div class="muted" style="font-size:13px;">File previewer</div>
+                        <div style="font-size:12px;color:var(--muted);">Supports PDF, images, CSV, TXT</div>
+                    </div> -->
+                </div>
+
+                <div id="cards" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: JSON Editor -->
+        <aside class="panel right">
+            <div class="inner json-area">
+                <div class="json-grid">
+                    <div>
+                        <!-- <label class="block" style="font-weight:700;">Input JSON</label> -->
+                        <textarea id="jsonInput" class="small" spellcheck="false">{{ result.raw_json }}</textarea>
+
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <!-- <button class="btn-small" onclick="generateForm()">Generate Form</button> -->
+                            <!-- <button class="btn-small" onclick="downloadJSON()">Download JSON</button> -->
+                            <div class="editor-actions">
+                                <button class="primary" onclick="downloadJSON()">Download JSON</button>
+                                <button id="saveBtn">Save</button>
+                                {% if not result.is_approved %}
+                                <button id="saveApproveBtn" class="primary">Save and Approve</button>
+                                {% else %}
+                                <button id="saveApproveBtn" class="btn-remove">Save and Disapprove</button>
+                                {% endif %}
+                                <button id="deleteBtn" class="btn-remove">Delete</button>
+                                <!-- <a href="" class="btn-remove">Delete</a> -->
+                            </div>
+
+                            <!-- <button class="btn-small" onclick="loadSample()">Load Sample</button> -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <!-- <label class="block" style="font-weight:700;">Shape JSON (optional)</label> -->
+                        <textarea id="shapeInput" class="small" spellcheck="false">{{ schema_json }}</textarea>
+
+                        <!-- <div class="note">Array items are labeled using the array name (singular) and the current index,
+                            e.g. <span class="badge">user 1 of 3 (object)</span>. Add/remove buttons are labeled (e.g.
+                            <em>"Add user"</em>, <em>"Remove user 1"</em>).</div>
+                    </div> -->
+                    </div>
+
+                    <div id="formArea"></div>
+
+                    <!-- <div style="margin-top:10px;">
+                        <button class="primary" onclick="submitForm()">Submit Updated JSON</button>
+                    </div> -->
+
+                    <div>
+                        <h3 style="margin:12px 0 6px;">Updated JSON</h3>
+                        <pre id="outputJson" class="preview-pre">{ }</pre>
+                    </div>
+                </div>
+        </aside>
+    </div>
+</div>
+
+<!-- JSON Editor Confirmation Modal -->
+<div id="confirmBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document" aria-labelledby="confirmTitle">
+        <h3 id="confirmTitle">Confirm remove</h3>
+        <p id="confirmMessage">Are you sure?</p>
+        <div class="modal-actions">
+            <button id="confirmCancel" class="btn-cancel">Cancel</button>
+            <button id="confirmOk" class="btn-confirm">Remove</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal" role="document" aria-labelledby="modalTitle">
+        <h3 id="confirmTitle">Delete Extracted Data</h3>
+        <p id="confirmMessage">Are you sure you want to delete this AI extracted data? This action cannot
+            be undone.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button id="modalConfirm" type="button" class="btn-confirm">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    let upload_id = Number("{{ result.environment_upload.id }}");
+    let email_id = Number("{{ result.environment_email.id }}");
+
+    console.log(upload_id, email_id);
+</script>
+<script src="{% static 'scripts/result_review.js' %}"></script>
+{% endblock %}

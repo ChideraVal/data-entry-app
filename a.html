@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Audit Logs — UI Mockup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f6f8fb;
+            --card: #ffffff;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --accent-2: #06b6d4;
+            --shadow-sm: 0 6px 18px rgba(16, 24, 40, 0.06);
+            --shadow-md: 0 10px 30px rgba(16, 24, 40, 0.08);
+            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: linear-gradient(180deg, #fbfdff 0%, var(--bg) 100%);
+            color: #0f172a;
+            padding: 28px
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: 20px
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px
+        }
+
+        .brand {
+            display: flex;
+            gap: 14px;
+            align-items: center
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            display: grid;
+            place-items: center;
+            color: white;
+            font-weight: 800
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow-md)
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .search {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search input {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #e6edf7;
+            width: 300px
+        }
+
+        .btn {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            border: 0;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--card);
+            box-shadow: var(--shadow-sm)
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent), #3b82f6);
+            color: #fff
+        }
+
+        .filter-btn {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        .count-badge {
+            background: #eef2ff;
+            color: var(--accent);
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 12px;
+            margin-left: 4px
+        }
+
+        /* Table */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #eef2f8;
+            font-size: 14px
+        }
+
+        thead th {
+            color: #374151;
+            font-weight: 700;
+            background: #fbfdff
+        }
+
+        .actor {
+            display: flex;
+            flex-direction: column;
+            gap: 4px
+        }
+
+        .actor .name {
+            font-weight: 700
+        }
+
+        .actor .role {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .action {
+            font-weight: 700
+        }
+
+        .target-type {
+            font-weight: 600;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .meta-time {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .details-btn {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #e6edf7;
+            background: #fff;
+            cursor: pointer
+        }
+
+        /* skeleton */
+        .skeleton {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(90deg, #f3f4f6, #eef2ff, #f3f4f6);
+            border-radius: 8px
+        }
+
+        .skeleton::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0)0%, rgba(255, 255, 255, 0.4)50%, rgba(255, 255, 255, 0)100%);
+            transform: translateX(-100%);
+            animation: shimmer 1.2s linear infinite
+        }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%)
+            }
+        }
+
+        .skeleton-row {
+            display: grid;
+            grid-template-columns: 220px 160px 1fr 140px 120px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px
+        }
+
+        .skeleton-line {
+            height: 12px;
+            border-radius: 6px
+        }
+
+        /* pagination */
+        .pagination {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 12px
+        }
+
+        .page-btn {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #e6edf7;
+            background: #fff;
+            cursor: pointer
+        }
+
+        .page-btn[disabled] {
+            opacity: .45;
+            cursor: not-allowed
+        }
+
+        /* modal backdrop */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200
+        }
+
+        .modal {
+            background: white;
+            border-radius: 10px;
+            width: 720px;
+            max-height: 80vh;
+            overflow: auto;
+            padding: 18px;
+            box-shadow: 0 20px 60px rgba(2, 6, 23, 0.3)
+        }
+
+        .modal h3 {
+            margin: 0 0 10px 0
+        }
+
+        .modal .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px
+        }
+
+        .kv {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            border-radius: 8px;
+            background: #fbfdff;
+            border: 1px solid #eef6ff
+        }
+
+        .kv .k {
+            font-weight: 700;
+            color: #374151;
+            font-size: 13px
+        }
+
+        .kv .v {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .meta-table {
+            margin-top: 12px;
+            border-top: 1px solid #eef2f8;
+            padding-top: 12px
+        }
+
+        .meta-row {
+            display: flex;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f6f9fc
+        }
+
+        .meta-key {
+            width: 220px;
+            font-weight: 700;
+            color: #374151
+        }
+
+        .meta-val {
+            color: var(--muted);
+            white-space: pre-wrap;
+            word-break: break-word
+        }
+
+        .raw-json {
+            background: #0b1220;
+            color: #e6eef8;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 8px;
+            white-space: pre-wrap
+        }
+
+        /* filter modals */
+        .filter-modal {
+            width: 360px;
+            padding: 12px
+        }
+
+        .filter-list {
+            max-height: 320px;
+            overflow: auto;
+            border: 1px solid #eef4ff;
+            padding: 8px;
+            border-radius: 8px
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 4px
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 8px
+        }
+
+        /* NEW: array item styling for arrays of objects */
+        .array-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .array-item {
+            border: 1px solid #eef4ff;
+            background: #fbfdff;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .array-item .array-index {
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .array-item .array-body {
+            margin-left: 4px;
+        }
+
+        /* small */
+        .small {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        @media (max-width:980px) {
+            .search input {
+                width: 160px
+            }
+
+            .skeleton-row {
+                grid-template-columns: 1fr 140px 120px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="logo">AL</div>
+                <div>
+                    <h1>Audit Logs</h1>
+                    <div class="subtitle">Who did what, to what, and when</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="filterUsersBtn" class="btn filter-btn">Filter by users <span id="usersCount"
+                        class="count-badge" style="display:none">0</span></button>
+                <button id="filterActionsBtn" class="btn filter-btn">Filter by actions <span id="actionsCount"
+                        class="count-badge" style="display:none">0</span></button>
+                <button id="filterTargetsBtn" class="btn filter-btn">Filter by target types <span id="targetsCount"
+                        class="count-badge" style="display:none">0</span></button>
+
+                <div class="search">
+                    <input id="searchInput" placeholder="Search username, target name..." />
+                    <button id="refreshBtn" class="btn">Refresh</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="card" id="mainCard">
+            <div id="tableWrap">
+                <!-- table inserted here -->
+            </div>
+
+            <div class="pagination" id="pager">
+                <!-- pagination -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Details modal -->
+    <div id="detailsBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+        <div class="modal" role="document" aria-labelledby="detailsTitle">
+            <h3 id="detailsTitle">Log details</h3>
+            <div id="detailsSummary" class="meta-grid" style="margin-bottom:12px">
+                <!-- actor/action/target/date -->
+            </div>
+
+            <div class="meta-table" id="detailsMeta">
+                <!-- metadata rows -->
+            </div>
+
+            <label style="display:block;margin-top:10px"><input type="checkbox" id="showRaw"> Show raw JSON</label>
+            <div id="rawJsonContainer" style="display:none"></div>
+
+            <div style="display:flex;justify-content:flex-end;margin-top:12px">
+                <button class="btn" onclick="closeDetails()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter modals -->
+    <div id="usersBackdrop" class="modal-backdrop">
+        <div class="modal filter-modal">
+            <h3>Filter by users</h3>
+            <div class="filter-list" id="usersList"></div>
+            <div class="filter-actions">
+                <button class="btn" onclick="closeFilter('users')">Cancel</button>
+                <button class="btn btn-primary" onclick="applyFilter('users')">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="actionsBackdrop" class="modal-backdrop">
+        <div class="modal filter-modal">
+            <h3>Filter by actions</h3>
+            <div class="filter-list" id="actionsList"></div>
+            <div class="filter-actions">
+                <button class="btn" onclick="closeFilter('actions')">Cancel</button>
+                <button class="btn btn-primary" onclick="applyFilter('actions')">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="targetsBackdrop" class="modal-backdrop">
+        <div class="modal filter-modal">
+            <h3>Filter by target types</h3>
+            <div class="filter-list" id="targetsList"></div>
+            <div class="filter-actions">
+                <button class="btn" onclick="closeFilter('targets')">Cancel</button>
+                <button class="btn btn-primary" onclick="applyFilter('targets')">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"
+        style="position:fixed;right:28px;bottom:28px;background:linear-gradient(90deg,#111827,#0f172a);color:white;padding:12px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.5);transform:translateY(20px);opacity:0;pointer-events:none;transition:opacity .2s,transform .3s"
+        role="status" aria-live="polite"></div>
+
+    <script>
+        /* =========================
+           Mock backend + data
+           ========================= */
+
+        const MOCK_PAGE_SIZE = 8;
+
+        // sample mock logs (actor.username, actor.role, action, target, target_type, created_at, metadata)
+        const MOCK_LOGS = (() => {
+            const now = new Date();
+            const makeDate = (daysAgo, mins = 0) => {
+                const d = new Date(now.getTime() - (daysAgo * 24 * 60 + mins) * 60 * 1000);
+                return d.toISOString();
+            };
+            // a handful of actors
+            const actors = [
+                { username: 'alice', role: 'super_admin' },
+                { username: 'chidera', role: 'admin' },
+                { username: 'john', role: 'member' },
+                { username: 'mary', role: 'member' },
+                { username: 'simon', role: 'member' }
+            ];
+            const actions = ['created', 'updated', 'deactivated', 'reactivated', 'approved', 'reprocessed', 'uploaded'];
+            const targetTypes = ['user', 'schema', 'environment', 'submission', 'email'];
+            const targets = {
+                user: ['jane', 'bob', 'kate', 'support'],
+                schema: ['invoice_v1', 'invoice_v2', 'po_standard'],
+                environment: ['prod', 'staging'],
+                submission: ['sub_1020', 'sub_1021', 'sub_1022'],
+                email: ['email_110', 'email_111']
+            };
+
+            const sampleMetadata = (action, ttype, target) => {
+                if (action === 'updated') {
+                    return {
+                        changed_fields: ['status', 'amount'],
+                        previous: { status: 'pending', amount: 1200 },
+                        current: { status: 'approved', amount: 1500 }
+                    };
+                }
+                if (action === 'created') {
+                    return { name: target, created_by: 'system' };
+                }
+                if (action === 'deactivated' || action === 'reactivated') {
+                    return { reason: action === 'deactivated' ? 'security' : 'reactivated_by_admin' };
+                }
+                if (action === 'reprocessed') {
+                    return { success: Math.random() > 0.3, attempts: Math.floor(Math.random() * 3) + 1, details: ['ocr', 'parse'] };
+                }
+                if (action === 'uploaded') {
+                    // here's an array of objects example to demonstrate the new UI
+                    return {
+                        files: [
+                            { name: 'invoice.pdf', size_kb: 321, pages: 3 },
+                            { name: 'receipt.jpg', size_kb: 124, pages: 1 }
+                        ],
+                        source: 'manual',
+                        uploader: 'chidera'
+                    };
+                }
+                if (action === 'approved') {
+                    return { approver: 'alice', note: 'Looks good', tags: ['urgent', 'high-value'] };
+                }
+                return {};
+            };
+
+            const logs = [];
+            for (let i = 0; i < 42; i++) {
+                const actor = actors[i % actors.length];
+                const action = actions[i % actions.length];
+                const ttype = targetTypes[i % targetTypes.length];
+                const tlist = targets[ttype];
+                const target = tlist[i % tlist.length];
+                logs.push({
+                    id: 1000 + i,
+                    actor: actor,
+                    action: action,
+                    target: String(target),
+                    target_type: ttype,
+                    created_at: makeDate(Math.floor(i / 5), i * 3),
+                    metadata: sampleMetadata(action, ttype, target)
+                });
+            }
+            // newest first:
+            return logs.reverse();
+        })();
+
+        // Simulate server-side filtering/pagination
+        function mockFetchLogs({ page = 1, pageSize = MOCK_PAGE_SIZE, users = [], actions = [], targetTypes = [], search = '' } = {}) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    let rows = MOCK_LOGS.slice();
+
+                    // apply filters
+                    if (users.length) rows = rows.filter(r => users.includes(r.actor.username));
+                    if (actions.length) rows = rows.filter(r => actions.includes(r.action));
+                    if (targetTypes.length) rows = rows.filter(r => targetTypes.includes(r.target_type));
+
+                    // search across actor username and target
+                    if (search && search.trim().length) {
+                        const norm = search.trim().toLowerCase();
+                        rows = rows.filter(r => (r.actor.username + ' ' + r.target + ' ' + r.target_type + ' ' + r.action).toLowerCase().includes(norm));
+                    }
+
+                    const total = rows.length;
+                    const start = (page - 1) * pageSize;
+                    const paged = rows.slice(start, start + pageSize);
+                    // also return available filters from whole dataset (useful for filter list)
+                    const availableUsers = Array.from(new Set(MOCK_LOGS.map(r => r.actor.username))).sort();
+                    const availableActions = Array.from(new Set(MOCK_LOGS.map(r => r.action))).sort();
+                    const availableTargetTypes = Array.from(new Set(MOCK_LOGS.map(r => r.target_type))).sort();
+
+                    resolve({
+                        logs: paged,
+                        total,
+                        page,
+                        pageSize,
+                        available: {
+                            users: availableUsers,
+                            actions: availableActions,
+                            targetTypes: availableTargetTypes
+                        }
+                    });
+                }, 650 + Math.random() * 250);
+            });
+        }
+
+        /* =========================
+           UI State + Helpers
+           ========================= */
+
+        let availableFilters = null; // cache of available filter lists
+
+        let state = {
+            page: 1,
+            pageSize: MOCK_PAGE_SIZE,
+            filters: { users: [], actions: [], targetTypes: [] },
+            search: ''
+        };
+
+        const tableWrap = document.getElementById('tableWrap');
+        const pager = document.getElementById('pager');
+        const toast = document.getElementById('toast');
+
+        // filter modal refs
+        const usersBackdrop = document.getElementById('usersBackdrop');
+        const usersList = document.getElementById('usersList');
+        const actionsBackdrop = document.getElementById('actionsBackdrop');
+        const actionsList = document.getElementById('actionsList');
+        const targetsBackdrop = document.getElementById('targetsBackdrop');
+        const targetsList = document.getElementById('targetsList');
+
+        const usersCount = document.getElementById('usersCount');
+        const actionsCount = document.getElementById('actionsCount');
+        const targetsCount = document.getElementById('targetsCount');
+
+        const searchInput = document.getElementById('searchInput');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        // details modal
+        const detailsBackdrop = document.getElementById('detailsBackdrop');
+        const detailsSummary = document.getElementById('detailsSummary');
+        const detailsMeta = document.getElementById('detailsMeta');
+        const rawJsonContainer = document.getElementById('rawJsonContainer');
+        const showRaw = document.getElementById('showRaw');
+
+        // helpers
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)'; }, 2600);
+        }
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            if (isNaN(d)) return iso;
+            return d.toLocaleString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        /* =========================
+           Rendering (table, skeleton, pager)
+           ========================= */
+
+        function renderSkeleton(rows = 6) {
+            tableWrap.innerHTML = '';
+            for (let i = 0; i < rows; i++) {
+                const s = document.createElement('div');
+                s.className = 'skeleton-row';
+                s.innerHTML = `<div class="skeleton skeleton-line" style="width:120px"></div>
+                   <div class="skeleton skeleton-line" style="width:90px"></div>
+                   <div class="skeleton skeleton-line" style="width:100%"></div>
+                   <div class="skeleton skeleton-line" style="width:120px"></div>
+                   <div class="skeleton skeleton-line" style="width:90px"></div>`;
+                tableWrap.appendChild(s);
+            }
+        }
+
+        function renderTable(logs, total, page, pageSize) {
+            tableWrap.innerHTML = '';
+
+            const table = document.createElement('table');
+            table.className = 'table';
+            table.innerHTML = `
+    <thead>
+      <tr>
+        <th style="width:220px">Actor</th>
+        <th style="width:160px">Action</th>
+        <th>Target</th>
+        <th style="width:140px">Target type</th>
+        <th style="width:120px">Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+            const tbody = table.querySelector('tbody');
+
+            logs.forEach(log => {
+                const tr = document.createElement('tr');
+
+                // Actor column: name + role below
+                const tdActor = document.createElement('td');
+                const actorWrap = document.createElement('div');
+                actorWrap.className = 'actor';
+                const nameEl = document.createElement('div');
+                nameEl.className = 'name';
+                nameEl.textContent = log.actor?.username || 'System';
+                const roleEl = document.createElement('div');
+                roleEl.className = 'role';
+                roleEl.textContent = log.actor?.role ? log.actor.role.replace(/_/g, ' ') : '';
+                actorWrap.appendChild(nameEl);
+                actorWrap.appendChild(roleEl);
+                tdActor.appendChild(actorWrap);
+
+                // Action
+                const tdAction = document.createElement('td');
+                tdAction.innerHTML = `<div class="action">${escapeHtml(capitalize(log.action))}</div>`;
+
+                // Target
+                const tdTarget = document.createElement('td');
+                tdTarget.innerHTML = `<div>${escapeHtml(log.target)}</div>`;
+
+                // Target type
+                const tdTargetType = document.createElement('td');
+                tdTargetType.innerHTML = `<div class="target-type">${escapeHtml(capitalize(log.target_type))}</div>`;
+
+                // Date & details button
+                const tdDate = document.createElement('td');
+                tdDate.innerHTML = `<div class="meta-time">${formatDate(log.created_at)}</div>
+                        <div style="margin-top:6px"><button class="details-btn" data-id="${log.id}">View</button></div>`;
+
+                tr.appendChild(tdActor);
+                tr.appendChild(tdAction);
+                tr.appendChild(tdTarget);
+                tr.appendChild(tdTargetType);
+                tr.appendChild(tdDate);
+
+                tbody.appendChild(tr);
+
+                // attach view handler
+                tr.querySelector('.details-btn').addEventListener('click', () => openDetails(log));
+            });
+
+            tableWrap.appendChild(table);
+
+            // pager
+            renderPager(total, page, pageSize);
+        }
+
+        function renderPager(total, page, pageSize) {
+            pager.innerHTML = '';
+            const pages = Math.max(1, Math.ceil(total / pageSize));
+            const prev = document.createElement('button');
+            prev.textContent = 'Prev';
+            prev.className = 'page-btn';
+            prev.disabled = page <= 1;
+            prev.addEventListener('click', () => { state.page--; fetchAndRender(); });
+            pager.appendChild(prev);
+
+            // show a range of page numbers (compact)
+            const start = Math.max(1, page - 3);
+            const end = Math.min(pages, page + 3);
+            if (start > 1) {
+                addPageBtn(1);
+                if (start > 2) pager.appendChild(createEllipsis());
+            }
+            for (let p = start; p <= end; p++) addPageBtn(p);
+            if (end < pages) {
+                if (end < pages - 1) pager.appendChild(createEllipsis());
+                addPageBtn(pages);
+            }
+
+            const next = document.createElement('button');
+            next.textContent = 'Next';
+            next.className = 'page-btn';
+            next.disabled = page >= pages;
+            next.addEventListener('click', () => { state.page++; fetchAndRender(); });
+            pager.appendChild(next);
+
+            function addPageBtn(p) {
+                const b = document.createElement('button');
+                b.textContent = p;
+                b.className = 'page-btn';
+                if (p === page) b.style.fontWeight = '700';
+                b.addEventListener('click', () => { state.page = p; fetchAndRender(); });
+                pager.appendChild(b);
+            }
+            function createEllipsis() {
+                const s = document.createElement('span'); s.textContent = '…'; s.style.padding = '0 8px'; s.style.color = 'var(--muted)'; return s;
+            }
+        }
+
+        /* =========================
+           Filters UI
+           ========================= */
+
+        document.getElementById('filterUsersBtn').addEventListener('click', async () => {
+            // If we have cached availableFilters, use it immediately to populate the list & show modal
+            if (availableFilters) {
+                populateFilterList('users', availableFilters.users, state.filters.users);
+                usersBackdrop.style.display = 'flex';
+                return;
+            }
+            // Otherwise open modal with loading placeholder, then fetch and populate
+            usersList.innerHTML = '<div class="small">Loading…</div>';
+            usersBackdrop.style.display = 'flex';
+            try {
+                const res = await mockFetchLogs({ page: 1, pageSize: 0 });
+                availableFilters = res.available;
+                populateFilterList('users', availableFilters.users, state.filters.users);
+            } catch (e) {
+                usersList.innerHTML = '<div class="small" style="color:var(--danger)">Failed to load filter values</div>';
+            }
+        });
+
+        document.getElementById('filterActionsBtn').addEventListener('click', async () => {
+            if (availableFilters) {
+                populateFilterList('actions', availableFilters.actions, state.filters.actions);
+                actionsBackdrop.style.display = 'flex';
+                return;
+            }
+            actionsList.innerHTML = '<div class="small">Loading…</div>';
+            actionsBackdrop.style.display = 'flex';
+            try {
+                const res = await mockFetchLogs({ page: 1, pageSize: 0 });
+                availableFilters = res.available;
+                populateFilterList('actions', availableFilters.actions, state.filters.actions);
+            } catch (e) {
+                actionsList.innerHTML = '<div class="small" style="color:var(--danger)">Failed to load filter values</div>';
+            }
+        });
+
+        document.getElementById('filterTargetsBtn').addEventListener('click', async () => {
+            if (availableFilters) {
+                populateFilterList('targets', availableFilters.targetTypes, state.filters.targetTypes);
+                targetsBackdrop.style.display = 'flex';
+                return;
+            }
+            targetsList.innerHTML = '<div class="small">Loading…</div>';
+            targetsBackdrop.style.display = 'flex';
+            try {
+                const res = await mockFetchLogs({ page: 1, pageSize: 0 });
+                availableFilters = res.available;
+                populateFilterList('targets', availableFilters.targetTypes, state.filters.targetTypes);
+            } catch (e) {
+                targetsList.innerHTML = '<div class="small" style="color:var(--danger)">Failed to load filter values</div>';
+            }
+        });
+
+        function populateFilterList(kind, items, selected) {
+            const container = kind === 'users' ? usersList : kind === 'actions' ? actionsList : targetsList;
+            container.innerHTML = '';
+            items.forEach(it => {
+                const id = `${kind}-${it}`;
+                const div = document.createElement('div');
+                div.className = 'filter-item';
+                div.innerHTML = `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="${id}"> <span>${escapeHtml(it)}</span></label>`;
+                container.appendChild(div);
+                const chk = div.querySelector('input');
+                if (selected && selected.includes(it)) chk.checked = true;
+                // toggle
+                div.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') chk.checked = !chk.checked;
+                });
+            });
+        }
+
+        function closeFilter(kind) {
+            if (kind === 'users') usersBackdrop.style.display = 'none';
+            if (kind === 'actions') actionsBackdrop.style.display = 'none';
+            if (kind === 'targets') targetsBackdrop.style.display = 'none';
+        }
+
+        function applyFilter(kind) {
+            const container = kind === 'users' ? usersList : kind === 'actions' ? actionsList : targetsList;
+            const checks = Array.from(container.querySelectorAll('input[type=checkbox]')).filter(c => c.checked).map(c => {
+                return c.parentNode.textContent.trim();
+            });
+            if (kind === 'users') state.filters.users = checks;
+            if (kind === 'actions') state.filters.actions = checks;
+            if (kind === 'targets') state.filters.targetTypes = checks;
+            // update badges
+            usersCount.style.display = state.filters.users.length ? 'inline-block' : 'none';
+            usersCount.textContent = state.filters.users.length;
+            actionsCount.style.display = state.filters.actions.length ? 'inline-block' : 'none';
+            actionsCount.textContent = state.filters.actions.length;
+            targetsCount.style.display = state.filters.targetTypes.length ? 'inline-block' : 'none';
+            targetsCount.textContent = state.filters.targetTypes.length;
+
+            // Reset to page 1 when filter changes
+            state.page = 1;
+            showToast('Filter applied');
+            fetchAndRender();
+
+            closeFilter(kind);
+        }
+
+        /* =========================
+           Details modal + metadata rendering
+           ========================= */
+
+        function openDetails(log) {
+            detailsBackdrop.style.display = 'flex';
+            // summary area
+            detailsSummary.innerHTML = '';
+            const actorKv = createKv('Actor', (log.actor?.username || 'System') + (log.actor?.role ? ` — ${capitalize(log.actor.role)}` : ''));
+            const actionKv = createKv('Action', capitalize(log.action));
+            const targetKv = createKv('Target', `${capitalize(log.target_type)} — ${log.target}`);
+            const dateKv = createKv('When', formatDate(log.created_at));
+            detailsSummary.appendChild(actorKv);
+            detailsSummary.appendChild(actionKv);
+            detailsSummary.appendChild(targetKv);
+            detailsSummary.appendChild(dateKv);
+
+            // metadata rendering (if any)
+            detailsMeta.innerHTML = '';
+            if (log.metadata && Object.keys(log.metadata).length) {
+                renderMetadataInto(log.metadata, detailsMeta);
+            } else {
+                const no = document.createElement('div'); no.className = 'small'; no.textContent = 'No additional details.'; detailsMeta.appendChild(no);
+            }
+
+            // raw JSON
+            rawJsonContainer.style.display = 'none';
+            rawJsonContainer.innerHTML = `<div class="raw-json">${escapeHtml(JSON.stringify(log, null, 2))}</div>`;
+            showRaw.checked = false;
+        }
+
+        showRaw.addEventListener('change', () => {
+            rawJsonContainer.style.display = showRaw.checked ? 'block' : 'none';
+        });
+
+        /* helper to build two-column kv */
+        function createKv(k, v) {
+            const wrap = document.createElement('div'); wrap.className = 'kv';
+            const ek = document.createElement('div'); ek.className = 'k'; ek.textContent = k;
+            const ev = document.createElement('div'); ev.className = 'v'; ev.textContent = v;
+            wrap.appendChild(ek); wrap.appendChild(ev);
+            return wrap;
+        }
+
+        /* Render metadata generically:
+           - arrays of primitives -> comma separated
+           - arrays of objects -> render each object as a boxed item and render nested keys
+           - nested objects -> recursive node structure (indented)
+        */
+        function renderMetadataInto(metadata, container) {
+            // flatten top-level keys into meta-rows
+            Object.keys(metadata).forEach(key => {
+                const val = metadata[key];
+                const row = document.createElement('div');
+                row.className = 'meta-row';
+                const k = document.createElement('div'); k.className = 'meta-key'; k.textContent = humanizeKey(key);
+                const v = document.createElement('div'); v.className = 'meta-val';
+
+                // render based on type
+                if (Array.isArray(val)) {
+                    // array: determine if primitives or objects
+                    v.appendChild(renderArray(val));
+                } else if (val && typeof val === 'object') {
+                    // nested object -> render a node-like structure
+                    v.appendChild(renderNestedObject(val));
+                } else {
+                    v.textContent = String(val);
+                }
+
+                row.appendChild(k); row.appendChild(v);
+                container.appendChild(row);
+            });
+        }
+
+        /* Render arrays (of primitives or objects) */
+        function renderArray(arr) {
+            const frag = document.createElement('div');
+            if (arr.length === 0) {
+                frag.textContent = '';
+                return frag;
+            }
+            // all primitives?
+            if (arr.every(x => (typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean'))) {
+                frag.textContent = arr.join(', ');
+                return frag;
+            }
+
+            // array contains objects or mixed -> render each object in a boxed item
+            const container = document.createElement('div');
+            container.className = 'array-container';
+            arr.forEach((item, idx) => {
+                if (item && typeof item === 'object' && !Array.isArray(item)) {
+                    container.appendChild(renderArrayOfObjects(item, idx));
+                } else if (Array.isArray(item)) {
+                    // nested array -> render recursively
+                    const nested = document.createElement('div');
+                    nested.appendChild(renderArray(item));
+                    container.appendChild(nested);
+                } else {
+                    // fallback for primitives mixed in
+                    const p = document.createElement('div'); p.textContent = String(item); container.appendChild(p);
+                }
+            });
+
+            frag.appendChild(container);
+            return frag;
+        }
+
+        /* Render a single object inside an array as a boxed item */
+        function renderArrayOfObjects(obj, idx) {
+            const box = document.createElement('div');
+            box.className = 'array-item';
+            const header = document.createElement('div');
+            header.className = 'array-index';
+            header.textContent = `Item ${idx + 1}`;
+            const body = document.createElement('div');
+            body.className = 'array-body';
+            body.appendChild(renderNestedObject(obj));
+            box.appendChild(header);
+            box.appendChild(body);
+            return box;
+        }
+
+        /* create DOM for nested objects, recursive */
+        function renderNestedObject(obj) {
+            const wrap = document.createElement('div');
+            wrap.style.marginLeft = '6px';
+            wrap.style.borderLeft = '2px dashed #eef6ff';
+            wrap.style.paddingLeft = '10px';
+            Object.keys(obj).forEach(k => {
+                const val = obj[k];
+                const row = document.createElement('div');
+                row.style.marginBottom = '6px';
+                const keySpan = document.createElement('strong'); keySpan.textContent = humanizeKey(k) + ': ';
+                const valSpan = document.createElement('span');
+                if (Array.isArray(val) && val.every(x => (typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean'))) {
+                    valSpan.textContent = val.join(', ');
+                } else if (Array.isArray(val)) {
+                    // nested array may be objects -> call renderArray
+                    const arrNode = renderArray(val);
+                    valSpan.appendChild(arrNode);
+                } else if (val && typeof val === 'object') {
+                    valSpan.appendChild(renderNestedObject(val));
+                } else {
+                    valSpan.textContent = String(val);
+                }
+                row.appendChild(keySpan);
+                row.appendChild(valSpan);
+                wrap.appendChild(row);
+            });
+            return wrap;
+        }
+
+        /* =========================
+           Fetch + render flow
+           ========================= */
+
+        let currentFetchToken = 0;
+
+        async function fetchAndRender() {
+            const token = ++currentFetchToken;
+            renderSkeleton(5);
+            try {
+                const res = await mockFetchLogs({
+                    page: state.page,
+                    pageSize: state.pageSize,
+                    users: state.filters.users,
+                    actions: state.filters.actions,
+                    targetTypes: state.filters.targetTypes,
+                    search: state.search
+                });
+                if (token !== currentFetchToken) return; // stale
+                // cache available filters for instant modal opens later
+                availableFilters = res.available;
+                renderTable(res.logs, res.total, res.page, res.pageSize);
+            } catch (e) {
+                tableWrap.innerHTML = '<div style="padding:18px;color:var(--muted)">Failed to load logs.</div>';
+            }
+        }
+
+        refreshBtn.addEventListener('click', () => {
+            showToast('Refreshing...');
+            fetchAndRender();
+        });
+
+        // search with debounce; reset page to 1
+        let searchTimer = null;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                state.search = e.target.value;
+                state.page = 1;         // reset page when search changes
+                fetchAndRender();
+            }, 350);
+        });
+
+        /* =========================
+           Helpers + escape
+           ========================= */
+
+        function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]); }
+        function capitalize(s) { return String(s || '').replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase()); }
+        function humanizeKey(k) { return String(k || '').replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase()); }
+
+        /* =========================
+           Details modal helpers
+           ========================= */
+
+        function closeDetails() { detailsBackdrop.style.display = 'none'; detailsMeta.innerHTML = ''; detailsSummary.innerHTML = ''; rawJsonContainer.innerHTML = ''; }
+
+        /* close filter modals on backdrop click / ESC */
+        document.addEventListener('click', (e) => {
+            if (e.target === usersBackdrop) usersBackdrop.style.display = 'none';
+            if (e.target === actionsBackdrop) actionsBackdrop.style.display = 'none';
+            if (e.target === targetsBackdrop) targetsBackdrop.style.display = 'none';
+            if (e.target === detailsBackdrop) closeDetails();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { usersBackdrop.style.display = 'none'; actionsBackdrop.style.display = 'none'; targetsBackdrop.style.display = 'none'; closeDetails(); } });
+
+        /* =========================
+           Init
+           ========================= */
+
+        (function init() {
+            fetchAndRender();
+        })();
+    </script>
+</body>
+
+</html>

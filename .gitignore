@@ -1,0 +1,6 @@
+__pycache__/
+myvenv/
+*.log
+.env
+media/
+staticfiles/

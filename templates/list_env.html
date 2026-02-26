@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Your Environments</title>
+    <link rel="stylesheet" href="{% static 'css/list_env.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>Environments</h1>
+                <p class="muted">Manage your IMAP environments and extraction settings.</p>
+            </div>
+
+            {% if request.user.is_super_admin or request.user.is_admin %}
+            <div class="actions">
+                <a href="{% url 'environment_create' %}" class="btn primary" title="Create environment">
+                    <!-- plus icon -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    New Environment
+                </a>
+            </div>
+            {% endif %}
+        </header>
+
+        {% if environments %}
+        <div class="grid" role="list">
+            {% for env in environments %}
+            <article class="card" role="listitem" aria-labelledby="env-{{ env.id }}-title">
+                <div class="card-head">
+                    <div style="min-width:0;">
+                        <div class="env-title">
+                            <h3 id="env-{{ env.id }}-title">{{ env.name }}</h3>
+                            {% if env.has_extracted_data %}
+                            <span class="badge used" title="This environment has processed documents">Used</span>
+                            {% else %}
+                            <span class="badge new" title="No extractions yet">New</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-actions" aria-hidden>
+                        <a class="small" href="{% url 'environment_emails_view' env.id %}" title="Open environment">
+                            <!-- eye icon -->
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" stroke="#0f172a"
+                                    stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" stroke="#0f172a" stroke-width="1.25" />
+                            </svg>
+                            <p>Open</p>
+                        </a>
+
+                        {% if request.user.is_super_admin or request.user.is_admin %}
+                        <a class="small" href="{% url 'environment_edit' env.id %}" title="Edit environment">
+                            <!-- edit icon -->
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                <path d="M3 21v-3.75L14.81 5.44a2 2 0 0 1 2.83 0l1.92 1.92a2 2 0 0 1 0 2.83L7.75 22H3z"
+                                    stroke="#0f172a" stroke-width="1.25" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <p>Edit</p>
+                        </a>
+                        {% endif %}
+
+                        <!-- <a class="small" href="{% url 'environment_emails_view' env.id %}" title="Clone environment">
+                            clone icon
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                <path d="M8 7H5a2 2 0 0 0-2 2v11h11a2 2 0 0 0 2-2v-3" stroke="#0f172a"
+                                    stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
+                                <rect x="8" y="3" width="13" height="13" rx="2" stroke="#0f172a" stroke-width="1.25" />
+                            </svg>
+                            Clone
+                        </a> -->
+
+                        {% if request.user.is_super_admin %}
+                        <form class="delete-form" method="post" action="{% url 'environment_delete' env.id %}"  onsubmit="return confirmDelete(event, `{{ env.id }}`);">
+                            {% csrf_token %}
+                            <button type="submit" class="small" aria-label="Delete environment {{ env.name }}" title="Delete">
+                                <!-- trash icon -->
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                    <path
+                                        d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                                        stroke="#ef4444" stroke-width="1.25" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                <p>Delete</p>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="helper">Tip: click <strong>Clone</strong> to try a new schema without touching historical data.
+        </div>
+
+        {% else %}
+        <div class="empty">
+            <h2>No environments yet</h2>
+            <p class="muted">Create an environment to start extracting documents from email.</p>
+            <div style="margin-top:12px;">
+                {% if request.user.is_super_admin or request.user.is_admin %}
+                <a href="{% url 'environment_create' %}" class="btn primary">
+                    <!-- plus icon -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Create environment
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if request.user.is_super_admin %}
+    <!-- Delete confirmation modal (fallback) -->
+    <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" role="document" aria-labelledby="modalTitle">
+            <h4 id="modalTitle">Delete environment</h4>
+            <p id="modalMessage">Are you sure you want to delete this environment? This action cannot be undone.</p>
+            <div class="row">
+                <button type="button" class="btn ghost" onclick="closeModal()">Cancel</button>
+                <button id="modalConfirm" type="button" class="btn btn-delete" onclick="confirmModal()">Delete</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{% static 'scripts/list_env.js' %}"></script>
+{% endblock %}
+

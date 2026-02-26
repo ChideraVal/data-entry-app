@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/signin.css' %}">
+</head>
+<body>
+  <div class="login-container">
+    <form class="login-form" action="{% url 'signin' %}?next={{ request.get_full_path|cut:'/signin/?next=' }}" method="post">
+      <h2>Welcome Back</h2>
+      <p>Login to your account</p>
+        {% csrf_token %}
+        {% for field in form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div>
+                {{ field }}
+            </div>
+        {% endfor %}
+
+        {% for key, error in form.errors.items %}
+            {{ error }}
+        {% endfor %}
+
+      <div class="show-password">
+        <input type="checkbox" id="togglePassword" />
+        <label for="togglePassword">Show Password</label>
+      </div>
+
+      <button type="submit">Login</button>
+      
+      <div class="links">
+        <!-- <a href="">Forgot password?</a> -->
+        <!-- <a href="{% url 'signin' %}?next={{ request.get_full_path|cut:'/signin/?next=' }}">Create account</a> -->
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordField = document.getElementById('id_password');
+
+    togglePassword.addEventListener('change', function () {
+      passwordField.type = this.checked ? 'text' : 'password';
+    });
+  </script>
+</body>
+</html>

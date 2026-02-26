@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Edit Environment</title>
+    <link rel="stylesheet" href="{% static 'css/create_env.css' %}">
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="card">
+      <h1>Edit Environment</h1>
+      <p class="lead">Configure IMAP + parsing options. List fields accept one value per line (press Enter between
+        values).</p>
+
+      {# show non-field errors #}
+      {% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row">
+          <div style="flex:1">
+            <label for="id_name">Environment name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="form-errors">{{ form.name.errors }}</div>{% endif %}
+          </div>
+          <div style="width:220px">
+            <label for="id_schema">Schema</label>
+            {{ form.schema }}
+            <div class="muted">Choose a schema (your schemas only)</div>
+            {% if form.schema.errors %}<div class="form-errors">{{ form.schema.errors }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <label for="id_imap_email">IMAP Email</label>
+            {{ form.imap_email }}
+            {% if form.imap_email.errors %}<div class="form-errors">{{ form.imap_email.errors }}</div>{% endif %}
+          </div>
+          <div>
+            <label for="id_imap_password">IMAP Password</label>
+            {{ form.imap_password }}
+            {% if form.imap_password.errors %}<div class="form-errors">{{ form.imap_password.errors }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="row">
+          <div style="flex:1">
+            <label for="id_imap_host">IMAP Host</label>
+            {{ form.imap_host }}
+            {% if form.imap_host.errors %}<div class="form-errors">{{ form.imap_host.errors }}</div>{% endif %}
+            <div class="muted">Host should include port if non-standard, e.g. <code>imap.mailserver.com:993</code></div>
+          </div>
+          <div style="width:200px">
+            <label for="id_since_date">Since date</label>
+            {{ form.since_date }}
+            {% if form.since_date.errors %}<div class="form-errors">{{ form.since_date.errors }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="section-title">
+          <h3>Folders & document types</h3>
+          <p class="muted">One per line</p>
+        </div>
+
+        <label for="id_email_folders_text">Email folders to scan</label>
+        {{ form.email_folders_text }}
+        {% if form.email_folders_text.errors %}<div class="form-errors">{{ form.email_folders_text.errors }}</div>{% endif %}
+
+        <!-- <label for="id_document_types_text">Document types</label>
+        {{ form.document_types }}
+        {% if form.document_types.errors %}<div class="form-errors">{{ form.document_types.errors }}</div>{% endif %} -->
+
+        <div class="section-title" style="margin-top:14px;">
+          <h3>Senders & subject keywords</h3>
+          <p class="muted">One per line</p>
+        </div>
+
+        <label for="id_allowed_senders_text">Allowed senders</label>
+        {{ form.allowed_senders_text }}
+        {% if form.allowed_senders_text.errors %}<div class="form-errors">{{ form.allowed_senders_text.errors }}</div>{% endif %}
+
+        <label for="id_allowed_subject_keywords_text">Allowed subject keywords</label>
+        {{ form.allowed_subject_keywords_text }}
+        {% if form.allowed_subject_keywords_text.errors %}<div class="form-errors">{{ form.allowed_subject_keywords_text.errors }}</div>{% endif %}
+
+        <label for="id_blocked_subject_keywords_text">Blocked subject keywords</label>
+        {{ form.blocked_subject_keywords_text }}
+        {% if form.blocked_subject_keywords_text.errors %}<div class="form-errors">{{ form.blocked_subject_keywords_text.errors }}</div>{% endif %}
+
+        <div class="section-title" style="margin-top:14px;">
+          <h3>Attachments & file types</h3>
+          <p class="muted">Allowed file types and whether attachments are required</p>
+        </div>
+
+        <div>
+          {{ form.allowed_file_types }}
+          {% if form.allowed_file_types.errors %}<div class="form-errors">{{ form.allowed_file_types.errors }}</div>{% endif %}
+        </div>
+
+        <div style="margin-top:10px;">
+          <label>
+            {{ form.require_attachment }} Require attachment
+          </label>
+          {% if form.require_attachment.errors %}<div class="form-errors">{{ form.require_attachment.errors }}</div>{% endif %}
+        </div>
+
+          {% if form.errors %}<div class="form-errors">{{ form.errors }}</div>{% endif %}
+
+        <div style="margin-top:18px; display:flex; gap:10px; align-items:center;">
+          <button class="btn primary" type="submit">Save Changes</button>
+          <!-- <button type="button" class="btn ghost" onclick="">Cancel</button> -->
+        </div>
+
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="meta-card">
+        <h3 style="margin-top:0;">Preview (typed JSON)</h3>
+        <p class="muted">This JSON will be stored and later used to generate Pydantic models for validation.</p>
+        <pre id="typedPreview">{ "document_types": ["invoice","card statement"], "email_folders": ["INBOX"] }</pre>
+
+        <h3 style="margin-top:12px;">Help</h3>
+        <p class="muted">Use one item per line in textareas. File type checkboxes control which attachments are
+          considered. If this environment processes documents, document types and schema cannot be changed later.</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{% static 'scripts/create_env.js' %}"></script>
+{% endblock %}

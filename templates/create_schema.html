@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Create Schema</title>
+    <link rel="stylesheet" href="{% static 'css/create_schema.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="pane">
+            <h3>Create schema.</h3>
+            <p>Define the structure of data you want to extract from emails/documents.</p>
+
+            <form action="{% url 'schema_create' %}" method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    {% if field.label != "Schema json" %}
+                    <label class="label">{{ field.label }}</label>
+                    {% endif %}
+
+                    {{ field }}
+                    
+                    <!-- {% if field.label != "Schema json" %}
+                    {% for err in field.errors %}
+                    <div class="error">{{ err }}</div>
+                    {% endfor %}
+                    {% endif %} -->
+                
+                {% endfor %}
+
+                {% if form.errors %}
+                {% for field, err in form.errors.items %}
+                <div class="error">{{ err }}</div>
+                {% endfor %}
+                {% endif %}
+
+                <button type="submit" id="saveBtn">Save Schema</button>
+            </form>
+
+            <div class="section-label">Fields</div>
+            <div id="fieldsContainer"></div>
+
+            <div class="controls" style="margin-top:8px;">
+                <button onclick="addField()" class="small">+ Add top-level field</button>
+                <button onclick="clearAll()" class="ghost small">Clear</button>
+            </div>
+
+            <div id="validationErrors" style="margin-top:12px;"></div>
+
+            <!-- <div class="save-row">
+                <button id="saveBtn" onclick="saveSchema()" class="small" disabled>Save Schema</button>
+                <div id="saveStatus" class="status"></div>
+            </div> -->
+
+            <div style="margin-top:8px; font-size:13px; color:#555;">
+                The schema will be sent to the backend as form data (`schema_name`, `schema_json`). Default POST URL:
+                <code>/schemas/save/</code>. You can change this in the code.
+            </div>
+        </div>
+
+        <div class="pane">
+            <!-- <h3>Typed JSON (for Pydantic generation)</h3>
+            <pre id="jsonPreview">{}</pre> -->
+
+            <h3 style="margin-top:12px;">Schema Tree</h3>
+            <div id="treePreview" class="tree-node"></div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{% static 'scripts/create_schema.js' %}"></script>
+{% endblock %}

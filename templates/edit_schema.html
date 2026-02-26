@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Create Schema</title>
+    <link rel="stylesheet" href="{% static 'css/edit_schema.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <!-- Left pane: controls + builder -->
+        <div class="pane">
+            <h3>Edit Schema</h3>
+
+            <form action="{% url 'schema_edit' schema.id %}" method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+
+                    {% if field.label != "Schema json" %}
+                    <label class="label">{{ field.label }}</label>
+                    {% endif %}
+
+                    {{ field }}
+                    
+                    <!-- {% if field.label != "Schema json" %}
+                    {% for err in field.errors %}
+                    <div class="error">{{ err }}</div>
+                    {% endfor %}
+                    {% endif %} -->
+                
+                {% endfor %}
+
+                {% if form.errors %}
+                {% for field, err in form.errors.items %}
+                <div class="error">{{ err }}</div>
+                {% endfor %}
+                {% endif %}
+
+                <textarea id="pasteSchema" hidden>{{ schema_json|safe }}</textarea>
+
+                <!-- <textarea id="formjsonPreview" name="schema_json" hidden></textarea> -->
+                <button type="submit" id="saveBtn">Save Schema</button>
+
+            </form>
+
+            <div class="section-label">Fields</div>
+            <div id="fieldsContainer"></div>
+
+            <div class="controls" style="margin-top:8px;">
+                <button onclick="addField()">+ Add top-level field</button>
+                <button class="ghost" onclick="clearAll()">Clear</button>
+            </div>
+
+            <div id="validationErrors"></div>
+
+            <div style="margin-top:8px; font-size:13px; color:#555;">
+                The UI sends form data to the backend (`schema_name`, `schema_json`). Default URLs are editable in the
+                top of the script.
+            </div>
+        </div>
+
+        <!-- Right pane: previews -->
+        <div class="pane">
+            <!-- <h3>Typed JSON (for Pydantic generation)</h3> -->
+            <!-- <pre id="jsonPreview">{}</pre> -->
+
+            <h3 style="margin-top:12px;">Schema Tree</h3>
+            <div id="treePreview" class="tree-node"></div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        const is_locked = ("{{ is_locked }}");
+    </script>
+    <script src="{% static 'scripts/edit_schema.js' %}"></script>
+{% endblock %}

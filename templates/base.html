@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% load static %}
+    {% block title %} {% endblock %}
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="navbar-inner">
+            <a href="{% url 'dashboard' %}" class="logo">MailExtract</a>
+
+            <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <nav class="nav-links" id="navLinks">
+                <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                <a href="{% url 'schema_list' %}" class="nav-link">Schemas</a>
+                <a href="{% url 'profile' %}" class="nav-link">Account</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page">
+        <!-- <div style="height: 1500px;"> -->
+            {% block body %} {% endblock %}
+        <!-- </div> -->
+    </main>
+
+
+    <script>
+        const menuBtn = document.getElementById('menuBtn');
+        const navLinks = document.getElementById('navLinks');
+        const links = document.querySelectorAll('.nav-link');
+
+        // Toggle mobile menu
+        menuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+        });
+
+        // Close on link click
+        links.forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('open');
+            });
+        });
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!navLinks.contains(e.target) && !menuBtn.contains(e.target)) {
+                navLinks.classList.remove('open');
+            }
+        });
+
+        // Active link detection
+        // const path = window.location.pathname;
+        // links.forEach(link => {
+        //     const href = link.getAttribute('href');
+        //     // if (href !== '/' && path.startsWith(href)) {
+        //     if (path === href) {
+        //         link.classList.add('active');
+        //     }
+        // });
+    </script>
+
+    {% block scripts %} {% endblock %}
+
+</body>
+
+</html>

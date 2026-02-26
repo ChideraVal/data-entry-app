@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% load static %}
+    <title>Your Schemas</title>
+    <link rel="stylesheet" href="{% static 'css/list_schemas.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>Schemas</h1>
+                <p class="muted">Manage your schemas and extraction fields.</p>
+            </div>
+
+            {% if request.user.is_super_admin or request.user.is_admin %}
+            <div class="actions">
+                <a href="{% url 'schema_create' %}" class="btn primary" title="Create schema">
+                    <!-- plus icon -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    New Schema
+                </a>
+            </div>
+            {% endif %}
+        </header>
+
+        {% if schemas %}
+        <div class="grid" role="list">
+            {% for schema in schemas %}
+            <article class="card" role="listitem" aria-labelledby="schema-{{ schema.id }}-title">
+                <div class="card-head">
+                    <div style="min-width:0;">
+                        <div class="env-title">
+                            <h3 id="env-{{ schema.id }}-title">{{ schema.name }}</h3>
+                            {% if schema.is_locked %}
+                            <span class="badge used" title="This schema has processed documents">Used</span>
+                            {% else %}
+                            <span class="badge new" title="No extractions yet">New</span>
+                            {% endif %}
+                        </div>
+                        <p class="desc">{{ schema.description }}</p>
+                    </div>
+
+                    <div class="card-actions" aria-hidden>
+
+                        {% if request.user.is_super_admin or request.user.is_admin %}
+                        <a class="small" href="{% url 'schema_edit' schema.id %}" title="Edit schema">
+                            <!-- edit icon -->
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                <path d="M3 21v-3.75L14.81 5.44a2 2 0 0 1 2.83 0l1.92 1.92a2 2 0 0 1 0 2.83L7.75 22H3z"
+                                    stroke="#0f172a" stroke-width="1.25" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <p>Edit</p>
+                        </a>
+                        {% endif %}
+
+                        {% if request.user.is_super_admin %}
+                        <form class="delete-form" method="post" action="{% url 'schema_delete' schema.id %}"  onsubmit="return confirmDelete(event, `{{ schema.id }}`);">
+                            {% csrf_token %}
+                            <button type="submit" class="small" aria-label="Delete schema {{ schema.name }}" title="Delete">
+                                <!-- trash icon -->
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                    <path
+                                        d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                                        stroke="#ef4444" stroke-width="1.25" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                                <p>Delete</p>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="helper">Tip: click <strong>Clone</strong> to try a new schema without touching historical data.
+        </div>
+
+        {% else %}
+        <div class="empty">
+            <h2>No schemas yet</h2>
+            <p class="muted">Create an schema to start extracting fields from documents from email.</p>
+            <div style="margin-top:12px;">
+                {% if request.user.is_super_admin or request.user.is_admin %}
+                <a href="{% url 'schema_create' %}" class="btn primary">
+                    <!-- plus icon -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Create schema
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if request.user.is_super_admin %}
+    <!-- Delete confirmation modal (fallback) -->
+    <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" role="document" aria-labelledby="modalTitle">
+            <h4 id="modalTitle">Delete schema</h4>
+            <p id="modalMessage">Are you sure you want to delete this schema? This action cannot be undone.</p>
+            <div class="row">
+                <button type="button" class="btn ghost" onclick="closeModal()">Cancel</button>
+                <button id="modalConfirm" type="button" class="btn btn-delete" onclick="confirmModal()">Delete</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="{% static 'scripts/list_schemas.js' %}"></script>
+{% endblock %}
+

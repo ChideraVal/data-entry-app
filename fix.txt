@@ -1,0 +1,16 @@
+remove user restrictions (upload/env/schema name checks)
+hide buttons
+block editing usernames, block deleting users
+fix column modal
+metrics & summary
+openai local file size limit
+emails to scan (unread, all)
+modal width
+modal scrollbar
+date format
+emails/uploads mobile css
+toast mobile css
+forms email error / error msg css
+export csv
+password change middleware
+table buttons

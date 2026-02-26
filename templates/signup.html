@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up - Bixy</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/signup.css' %}">
+</head>
+<body>
+  <div class="signup-container">
+    <form class="signup-form" action="{% url 'signup' %}?next={{ request.get_full_path|cut:'/signup/?next=' }}" method="post">
+      <h2>Create Account</h2>
+      <p>Join Bixy by filling out the form below</p>
+
+      {% csrf_token %}
+        {% for field in form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div>
+                {{ field }}
+            </div>
+        {% endfor %}
+
+        {% for key, error in form.errors.items %}
+            {{ error }}
+        {% endfor %}
+
+      <div class="show-password">
+        <input type="checkbox" id="togglePassword" />
+        <label for="togglePassword">Show Password</label>
+      </div>
+
+      <button type="submit">Sign Up</button>
+
+      <div class="links">
+        <p>Already have an account? <a href="{% url 'signin' %}?next={{ request.get_full_path|cut:'/signup/?next=' }}">Login</a></p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordField = document.getElementById('id_password1');
+    const confirmPasswordField = document.getElementById('id_password2');
+
+    togglePassword.addEventListener('change', function () {
+      const type = this.checked ? 'text' : 'password';
+      passwordField.type = type;
+      confirmPasswordField.type = type;
+    });
+  </script>
+</body>
+</html>

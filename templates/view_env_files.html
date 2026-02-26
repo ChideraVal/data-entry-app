@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% load static %}
+<title>Env Emails</title>
+<link rel="stylesheet" href="{% static 'css/view_env_files.css' %}">
+{% endblock %}
+
+{% block body %}
+
+    <div class="container" role="main">
+        <header class="header">
+            <div class="brand">
+                <!-- <div class="logo">UP</div> -->
+                <div>
+                    <h1>{{ environment.name }}</h1>
+                    <div class="subtitle">Manual uploads • Dashboard</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a href="{% url 'environment_emails_view' env_id %}" class="btn btn-link">View Emails</a>
+
+                <!-- Primary CTA: Upload Files -->
+                <label class="btn btn-primary" title="Upload files">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 3v12" stroke="white" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="white" stroke-width="1.8"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M7 11l5-6 5 6" stroke="white" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Upload File(s)
+                    <input id="uploadFileInput" type="file" multiple />
+                </label>
+
+                <!-- Secondary: Refresh -->
+                <!-- <button id="refreshBtn" class="btn btn-ghost" title="Refresh uploads">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M20 7v6h-6" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M4 17a8 8 0 1 0 4-7.1" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button> -->
+            </div>
+        </header>
+
+        <!-- Metrics -->
+        <section class="metrics" aria-label="Key metrics">
+            <div class="metric card">
+                <div class="icon" style="background:linear-gradient(135deg,#7c3aed,#60a5fa)">F</div>
+                <div style="flex:1">
+                    <div class="m-title">Files processed this month</div>
+                    <div class="m-value" id="docsValue">—</div>
+                    <div class="progress" aria-hidden><i id="docsProgress" style="width:0%"></i></div>
+                </div>
+            </div>
+
+            <div class="metric card">
+                <div class="icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">P</div>
+                <div style="flex:1">
+                    <div class="m-title">Uploads processed</div>
+                    <div class="m-value" id="emailsValue">—</div>
+                    <div class="progress" aria-hidden><i id="emailsProgress" style="width:0%"></i></div>
+                </div>
+            </div>
+
+            <div class="metric card">
+                <div class="icon" style="background:linear-gradient(135deg,#16a34a,#34d399)">A</div>
+                <div style="flex:1">
+                    <div class="m-title">Data approved (parsed data)</div>
+                    <div class="m-value" id="ordersValue">—</div>
+                    <div class="progress" aria-hidden><i id="ordersProgress" style="width:0%"></i></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main -->
+        <section class="main">
+            <!-- Queue / List -->
+            <div class="card">
+                <h2>Uploads — Recent uploaded files</h2>
+                <div class="subtitle" style="margin-top:6px; margin-bottom:12px;">Shows the most recent manually
+                    uploaded files and their processing status.</div>
+
+                <div class="toolbar">
+                    <div></div>
+
+                    <div style="display:flex;gap:12px;align-items:center;" class="toolbar-sub">
+                        <div class="filters" role="tablist" aria-label="Status filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="failed">Failed</button>
+                            <button class="filter-btn" data-filter="pending">Pending</button>
+                            <button class="filter-btn" data-filter="successful">Successful</button>
+                        </div>
+
+                        <div class="search">
+                            <input id="search" placeholder="Search upload name, date..." aria-label="Search uploads" />
+                            <!-- Secondary: Refresh -->
+                            <button id="refreshBtn" class="btn btn-ghost" title="Refresh uploads">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                    <path d="M20 7v6h-6" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <path d="M4 17a8 8 0 1 0 4-7.1" stroke="#0f172a" stroke-width="1.6"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="list" id="queueList" aria-live="polite">
+                    <!-- rows inserted by JS -->
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="sidebar card">
+                <h3 style="margin-top:0">Summary</h3>
+                <div class="small">Quick stats and helpful tips</div>
+
+                <div class="stat">
+                    <div>Pending</div>
+                    <div id="countPending">0</div>
+                </div>
+                <div class="stat">
+                    <div>Failed</div>
+                    <div id="countFailed">0</div>
+                </div>
+                <div class="stat">
+                    <div>Successful</div>
+                    <div id="countSuccess">0</div>
+                </div>
+
+                <div style="margin-top:18px">
+                    <h4 style="margin:0 0 8px 0">Notes</h4>
+                    <div class="small">• Uploads are processed with the same AI pipeline as email attachments. <br>•
+                        Large files may be skipped based on environment limits.</div>
+                </div>
+
+                <div style="margin-top:18px">
+                    <button id="bulkReprocessBtn" class="btn btn-link" style="width:100%">Reprocess All Failed</button>
+                    <a href="{% url 'view_result_data' env_id %}" class="btn btn-link" style="width: 100%; margin-top: .5em;">View Extracted Data</a>
+                </div>
+            </aside>
+        </section>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+        <div class="modal" role="document" aria-labelledby="modalTitle">
+            <h4 id="modalTitle">Delete Upload</h4>
+            <p id="modalMessage">Are you sure you want to delete this Upload and its results? This action cannot
+                be undone.</p>
+            <div class="row">
+                <button type="button" class="btn ghost" onclick="closeModal()">Cancel</button>
+                <button id="modalConfirm" type="button" class="btn btn-delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename confirmation modal -->
+    <div id="modalRename" class="modal-backdrop" role="dialog" aria-modal="true">
+        <div class="modal" role="document" aria-labelledby="modalTitle">
+            <h4 id="modalTitle">Rename Upload</h4>
+            <!-- <p id="modalMessage">Are you sure you want to delete this Upload and its results? This action cannot
+                be undone.</p> -->
+            <input type="text" id="modalRenameInput" placeholder="Upload Name" maxlength="100" autocomplete="off">
+            <div class="row">
+                <button type="button" class="btn ghost" onclick="closeRenameModal()">Cancel</button>
+                <button id="modalRenameConfirm" type="button" class="btn primary">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    let env_id = Number("{{ env_id }}");
+</script>
+<script src="{% static 'scripts/view_env_files.js' %}"></script>
+{% endblock %}
